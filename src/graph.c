@@ -9,7 +9,7 @@ char *strdup(const char *s);	/* string.h broken on alpha-linux */
 size_t graph_num_vertices(const struct graph *g) {
     size_t n = 0;
     for (size_t v = 0; v < g->size; v++)
-	if (g->vertices[v])
+	if (graph_vertex_exists(g, v))
 	    n++;
     return n;
 }
@@ -17,7 +17,7 @@ size_t graph_num_vertices(const struct graph *g) {
 size_t graph_num_edges(const struct graph *g) {
     size_t n = 0, _;
     for (size_t v = 0; v < g->size; v++)
-	if (g->vertices[v])
+	if (graph_vertex_exists(g, v))
 	    GRAPH_NEIGHBORS_ITER(g, v, _)
 		n++;
     assert ((n % 2) == 0);
@@ -29,8 +29,8 @@ struct graph *graph_copy(const struct graph *g) {
 			      + g->size * sizeof (struct vertex *));
     g2->capacity = g2->size = g->size;
     for (size_t i = 0; i < g->size; i++) {
-	if (g->vertices[i] == NULL) {
-	    g2->vertices[i] = NULL;
+	if (!graph_vertex_exists(g, i)) {
+	    g2->vertices[i] = NULL_NEIGHBORS;
 	} else {
 	    size_t bytes = (sizeof (struct vertex)
 			    + g->vertices[i]->deg * sizeof (vertex));
@@ -47,21 +47,22 @@ struct graph *graph_grow(struct graph *g, size_t size) {
 	g->capacity = size;
     }
     for (size_t i = g->size; i < size; ++i)
-	g->vertices[i] = NULL;
+	g->vertices[i] = NULL_NEIGHBORS;
     g->size = size;
     return g;
 }
 
 void graph_free(struct graph *g) {
     for (size_t v = 0; v < g->size; v++)
-	free(g->vertices[v]);
+	if (graph_vertex_exists(g, v))
+	    free(g->vertices[v]);
     free(g);
 }
 
 static void grow_neighbors(struct graph *g, vertex v, size_t new_capacity) {
-    bool is_new = g->vertices[v] == NULL;
+    bool is_new = !graph_vertex_exists(g, v);
     if (is_new || new_capacity > g->vertices[v]->capacity) {
-	g->vertices[v] = realloc(g->vertices[v],
+	g->vertices[v] = realloc(graph_vertex_exists(g, v) ? g->vertices[v] : NULL,
 				 sizeof (struct vertex)
 				 + new_capacity * sizeof (vertex));
 	g->vertices[v]->capacity = new_capacity;
@@ -89,8 +90,8 @@ void graph_connect(struct graph *g, vertex v, vertex w) {
     assert(v < g->size);
     assert(w < g->size);
 
-    grow_neighbors(g, v, g->vertices[v] ? g->vertices[v]->deg + 1 : 1);
-    grow_neighbors(g, w, g->vertices[w] ? g->vertices[w]->deg + 1 : 1);
+    grow_neighbors(g, v, graph_vertex_exists(g, v) ? g->vertices[v]->deg + 1 : 1);
+    grow_neighbors(g, w, graph_vertex_exists(g, w) ? g->vertices[w]->deg + 1 : 1);
     
     g->vertices[v]->neighbors[g->vertices[v]->deg++] = w;
     g->vertices[w]->neighbors[g->vertices[w]->deg++] = v;
@@ -116,6 +117,13 @@ void graph_disconnect(struct graph *g, vertex v, vertex w) {
     }
 }
 
+void graph_vertex_disable(struct graph *g, vertex v) {
+    *(size_t *) g->vertices[v] |= (size_t) 1;
+}
+void graph_vertex_enable(struct graph *g, vertex v) {
+    *(size_t *) g->vertices[v] &= ~(size_t) 1;
+}
+
 struct graph *graph_subgraph(const struct graph *g, const struct bitvec *s) {
     size_t size = g->size;
     struct graph *sub = malloc(sizeof (struct graph) + sizeof (void *) * size);
@@ -123,8 +131,8 @@ struct graph *graph_subgraph(const struct graph *g, const struct bitvec *s) {
 
     for (size_t v = 0; v < g->size; v++) {
 	size_t new_deg = 0;
-	if (!bitvec_get(s, v) || g->vertices[v] == NULL) {
-	    sub->vertices[v] = NULL;
+	if (!bitvec_get(s, v) || !graph_vertex_exists(g, v)) {
+	    sub->vertices[v] = NULL_NEIGHBORS;
 	} else {
 	    for (size_t n = 0; n < g->vertices[v]->deg; n++) {
 		if (bitvec_get(s, g->vertices[v]->neighbors[n]))
@@ -184,7 +192,7 @@ bool graph_is_bipartite(const struct graph *g) {
 void graph_output(const struct graph *g, FILE *stream, const char **vertices) {
     fprintf(stream, "{ %zd\n", g->size);
     for (unsigned v = 0; v < g->size; v++) {
-	if (g->vertices[v]) {
+	if (graph_vertex_exists(g, v)) {
 	    if (g->vertices[v]->deg == 0) {
 		if (vertices)
 		    fprintf(stream, "%s\n", vertices[v]);

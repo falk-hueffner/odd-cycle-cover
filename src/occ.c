@@ -162,6 +162,12 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	    continue;
 
 	if (flow_flow(flow) < ysize) {
+#if 0
+	    fprintf(stderr, "sources = "); bitvec_dump(sources); fputc('\n', stderr);
+	    fprintf(stderr, "targets = "); bitvec_dump(targets); fputc('\n', stderr);
+	    graph_dump(g, 0);
+#endif
+	    
 	    cut = flow_vertex_cut(flow, sources);
 	    break;
 	}
@@ -213,7 +219,6 @@ bool occ_is_occ(const struct graph *g, const struct bitvec *occ) {
 struct problem {
     const struct graph *g;	// The input graph
     struct graph *g_prime;	// G' as described by Reed et al.
-    struct graph *g_prime_bak;	// Same with no vertices deleted
     size_t occ_size;		// Size of occ_vertices
     const struct bitvec *occ;	// The known OCC
     const vertex *occ_vertices;	// Array with the vertices in OCC
@@ -322,13 +327,11 @@ void bipsub_remove_pair(struct problem *problem, vertex v) {
     vertex t2 = flow_drain_source(problem->flow, s);
     if (t2 != t) {
 	vertex s2 = flow_drain_target(problem->flow, t);
-	struct vertex *s_bak = problem->g_prime->vertices[s];
-	struct vertex *t_bak = problem->g_prime->vertices[t];
-	problem->g_prime->vertices[s] = NULL;
-	problem->g_prime->vertices[t] = NULL;
+	graph_vertex_disable(problem->g_prime, s);
+	graph_vertex_disable(problem->g_prime, t);
 	flow_augment_pair(problem->flow, s2, t2);
-	problem->g_prime->vertices[s] = s_bak;
-	problem->g_prime->vertices[t] = t_bak;
+	graph_vertex_enable(problem->g_prime, s);
+	graph_vertex_enable(problem->g_prime, t);
     }
 }
 
@@ -409,8 +412,8 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
     colors[v] = color;
 
     bitvec_set(subgraph, v);
-    problem->g_prime->vertices[v] = problem->g_prime_bak->vertices[v];
-    problem->g_prime->vertices[v2] = problem->g_prime_bak->vertices[v2];
+    graph_vertex_enable(problem->g_prime, v);
+    graph_vertex_enable(problem->g_prime, v2);
     vertex s, t;
     if (color == WHITE)
 	s = v, t = v2;
@@ -441,8 +444,8 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
     bitvec_unset(subgraph, v);
     bitvec_copy(in_queue, in_queue_backup);
     qtail = qtail_backup;
-    problem->g_prime->vertices[v] = NULL;
-    problem->g_prime->vertices[problem->clones[v]] = NULL;
+    graph_vertex_disable(problem->g_prime, v);
+    graph_vertex_disable(problem->g_prime, problem->clones[v]);
     bipsub_remove_pair(problem, v);
 
 try_red:
@@ -471,13 +474,12 @@ static struct bitvec *enum_occ_subsets_bipartite(struct problem *problem) {
     vertex *qtail = queue;
 
     problem->flow = flow_make(problem->g_prime);
-    problem->g_prime_bak = graph_copy(problem->g_prime);
     for (size_t i = 0;
 	 i < problem->occ_size - (problem->last_not_in_occ ? 1 : 0); i++) {
 	vertex v = problem->occ_vertices[i];
 	vertex clone = problem->clones[v];
-	problem->g_prime->vertices[v] = NULL;
-	problem->g_prime->vertices[clone] = NULL;
+	graph_vertex_disable(problem->g_prime, v);
+	graph_vertex_disable(problem->g_prime, clone);
     }
 
     if (problem->last_not_in_occ) {

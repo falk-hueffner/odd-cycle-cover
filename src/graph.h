@@ -11,6 +11,8 @@ struct bitvec;
 /* uint16_t would do, but seems to be slower in benchmarks.  */
 typedef size_t vertex;
 
+#define NULL_NEIGHBORS ((struct vertex *) (size_t) 1)
+
 struct graph {
     size_t capacity;
     size_t size;
@@ -27,7 +29,7 @@ struct graph {
 
 #define GRAPH_ITER_EDGES(g, v, w)				\
     for (v = 0; v < g->size; v++)				\
-	if (g->vertices[v])					\
+	if (graph_vertex_exists(g, v))				\
 	    for (vertex *__pw = g->vertices[v]->neighbors,	\
 		        *__pw_end = __pw + g->vertices[v]->deg;	\
 		 __pw != __pw_end && (w = *__pw, 1); __pw++)	\
@@ -45,13 +47,15 @@ size_t graph_num_vertices(const struct graph * g);
 size_t graph_num_edges(const struct graph * g);
 static inline bool graph_vertex_exists(const struct graph *g, vertex v) {
     assert(v < g->size);
-    return g->vertices[v] != NULL;
+    return ((size_t) g->vertices[v] & 1) == 0;
 }
 bool graph_is_bipartite(const struct graph *g);
 bool graph_two_coloring(const struct graph *g, struct bitvec *colors);
 
 void graph_connect(struct graph *g, vertex v, vertex w);
 void graph_disconnect(struct graph *g, vertex v, vertex w);
+void graph_vertex_disable(struct graph *g, vertex v);
+void graph_vertex_enable(struct graph *g, vertex v);
 
 void graph_output(const struct graph *g, FILE* stream, const char **vertices);
 static inline void graph_print(const struct graph *g, const char **vertices) {
