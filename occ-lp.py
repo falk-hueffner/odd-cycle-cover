@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import string, sys, os, re, getopt
+import string, sys, os, re, getopt, popen2
 
 def usage(fd):
     print >> fd, "Usage: occ-lp [-c]"
@@ -9,18 +9,22 @@ def usage(fd):
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hc", ["--help"])
+        opts, args = getopt.getopt(sys.argv[1:], "hcs", ["--help"])
     except getopt.GetoptError:
         usage(sys.stderr)
         sys.exit(2)
 
     count_only = 0
+    stats = 0
     for o, a in opts:
         if o in ("-h", "--help"):
             usage(sys.stdout)
             sys.exit(0)
         if o == "-c":
             count_only = 1
+        if o == "-s":
+            count_only = 1
+            stats = 1
 
     edges = []
     vertex_names = {}
@@ -58,9 +62,11 @@ def main():
     n = len(vertex_numbers)
     m = len(edges)
 
-    glpsol_in, glpsol_out = os.popen2("glpsol --math /dev/stdin --display /dev/null --output /dev/stdout")
+    #glpsol_in, glpsol_out = os.popen2("glpsol --math /dev/stdin --display /dev/null --output /dev/stdout")
+    glpsol = popen2.Popen3("glpsol --math /dev/stdin --display /dev/null --output /dev/stdout")
 
-    #glpsol_in = sys.stdout
+    glpsol_in  = glpsol.tochild
+    glpsol_out = glpsol.fromchild
 
     print >> glpsol_in, \
 """param n > 0 integer;
@@ -93,6 +99,9 @@ param m := %d;
     print >> glpsol_in, ";\n\nend;"
 
     glpsol_in.close()
+    output = glpsol_out.readlines()
+    status = glpsol.wait()
+    failed = os.WIFSIGNALED(status) or os.WEXITSTATUS(status) != 0
 
     # example output:
     #    No. Column name       Activity     Lower bound   Upper bound
@@ -101,13 +110,21 @@ param m := %d;
     #     2 occ[1]       *              0             0             1
     occpat = re.compile('.*occ\[(\d+)\]\s+\*\s+(\d+)')
     occ_size = 0
-    for line in glpsol_out.readlines():
-        m = occpat.match(line)
-        if m:
-            if int(m.groups()[1]):
+    for line in output:
+        match = occpat.match(line)
+        if match:
+            if int(match.groups()[1]):
                 if not count_only:
-                    print vertex_names[int(m.groups()[0])]
+                    print vertex_names[int(match.groups()[0])]
                 occ_size += 1
-    if count_only:
+    if stats:
+        user, system, child_user, child_system, wall = os.times()
+        if failed:
+            occ_size = "--"
+        print "%5d %6d %5s %10.2f" % (n, m, occ_size, user + child_user)
+    elif count_only:
         print occ_size
+    if failed:
+        sys.exit(1)
+
 main()
