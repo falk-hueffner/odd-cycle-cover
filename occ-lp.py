@@ -8,8 +8,7 @@ def usage(fd):
     print >> fd, "  -c   Print only the size of the odd cycle cover"
     print >> fd, "  -s   Print only statistics"
     print >> fd, "  -e   Cover by edges (default: vertices)"
-    print >> fd, "  -m   Do not solve, just prin the LP in GNU MathProg format"
-    print >> fd, "  -l   Do not solve, just prin the LP in CPLEX LP format"
+    print >> fd, "  -m   Do not solve, just print the LP in GNU MathProg format"
 
 def mathprog_lp(vertex_numbers, edges, is_edge_occ):
     n = len(vertex_numbers)
@@ -54,7 +53,7 @@ param m := %(m)d;
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hcseml", ["--help"])
+        opts, args = getopt.getopt(sys.argv[1:], "hcsem", ["--help"])
     except getopt.GetoptError:
         usage(sys.stderr)
         sys.exit(2)
@@ -77,8 +76,6 @@ def main():
             stats = True
         if o == "-m":
             just_mathprog = True
-        if o == "-l":
-            just_cplex = True
 
     edges = []
     vertex_names = {}
