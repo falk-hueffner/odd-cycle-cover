@@ -203,6 +203,7 @@ void flow_augment_pair(struct flow *flow, const struct graph *g,
 	} else {
 	    w = flow->come_from[v];
 	    if (w != NULL_VERTEX) {
+		assert(graph_vertex_exists(g, w));
 		vertex wcode = (w << 1) | OUT;
 		if (!seen[wcode]) {
 		    predecessors[wcode] = v;
@@ -334,12 +335,25 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
 }
 
 void flow_dump(const struct flow *flow) {
+    ALLOCA_BITVEC(done, flow->size);    
     fprintf(stderr, "{ flow %zu:\n", flow->flow);
-    for (size_t i = 0; i < flow->size; i++) {
-	if (flow->go_to[i] != NULL_VERTEX)
-	    fprintf(stderr, "%4zu -> %4zu\n", i, flow->go_to[i]);
-	if (flow->come_from[i] != NULL_VERTEX)
-	    fprintf(stderr, "%4zu <- %4zu\n", i, flow->come_from[i]);
+    for (vertex v = 0; v < flow->size; v++) {
+	if (flow_is_source(flow, v)) {
+	    vertex prev = NULL_VERTEX;
+	    for (vertex w = v; w != NULL_VERTEX;
+		 prev = w, w = flow->go_to[w]) {
+		fprintf(stderr, " %d", (int) w);
+		bitvec_set(done, w);
+		if (prev != NULL_VERTEX && flow->come_from[w] != prev)
+		    fprintf(stderr, " BAD come_from %d",
+			    (int) flow->come_from[w]);
+	    }
+	    fprintf(stderr, "\n");
+	}
     }
+    for (size_t i = 0; i < flow->size; i++)
+	if (!bitvec_get(done, i) && flow_vertex_flow(flow, i))
+	    fprintf(stderr, " BAD dangling %d -> %d -> %d\n",
+		    (int) flow->come_from[i], (int) i, (int) flow->go_to[i]);
     fprintf(stderr, "}\n");
 }
