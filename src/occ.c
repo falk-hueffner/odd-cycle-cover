@@ -186,11 +186,11 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	    }
 	    if (bitvec_get(targets, y1[x])) {
 		// might already be drained by previous drain action
-		if (flow.vertex_flow[y1[x]])
+		if (flow_vertex_flow(&flow, y1[x]))
 		    flow_drain_target(&flow, g, sources, y1[x]);
 	    } else {
 		assert(bitvec_get(targets, y2[x]));
-		if (flow.vertex_flow[y2[x]])
+		if (flow_vertex_flow(&flow, y2[x]))
 		    flow_drain_target(&flow, g, sources, y2[x]);
 	    }
 	}

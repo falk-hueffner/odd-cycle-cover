@@ -9,7 +9,7 @@
 struct bitvec;
 
 /* uint16_t would do, but seems to be slower in benchmarks.  */
-typedef unsigned long vertex;
+typedef size_t vertex;
 
 struct graph {
     size_t capacity;
