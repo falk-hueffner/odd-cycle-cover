@@ -8,28 +8,77 @@ def usage(fd):
     print >> fd, "  -c   Print only the size of the odd cycle cover"
     print >> fd, "  -s   Print only statistics"
     print >> fd, "  -e   Cover by edges (default: vertices)"
+    print >> fd, "  -m   Do not solve, just prin the LP in GNU MathProg format"
+    print >> fd, "  -l   Do not solve, just prin the LP in CPLEX LP format"
+
+def mathprog_lp(vertex_numbers, edges, is_edge_occ):
+    n = len(vertex_numbers)
+    m = len(edges)
+
+    prog = \
+"""
+param n > 0 integer;
+param m > 0 integer;
+
+param v1{0..m-1}, >= 0;
+param v2{0..m-1}, >= 0;
+
+var occ{0..%(occ_range)s-1} binary;
+var p{0..n-1} binary;
+
+minimize obj: sum{i in 0..%(occ_range)s-1} occ[i];
+
+s.t.	neq1{i in 0..m-1}: p[v1[i]] + p[v2[i]] + (%(occ_fudge)s) >= 1;
+	neq2{i in 0..m-1}: p[v1[i]] + p[v2[i]] - (%(occ_fudge)s) <= 1;
+
+data;
+
+param n := %(n)d;
+param m := %(m)d;
+        
+""" % { 'n' : n,
+        'm' : m,
+        'occ_range' : is_edge_occ and "m" or "n",
+        'occ_fudge' : is_edge_occ and "occ[i]" or "occ[v1[i]] + occ[v2[i]]" }
+
+    prog += "param v1 :="
+    for i in range(0, len(edges)):
+        prog += "\t%2d %2d," % (i, edges[i][0])
+    prog += ";\n\nparam v2 :="
+    for i in range(0, len(edges)):
+        prog += "\t%2d %2d," % (i, edges[i][1])
+    prog += ";\n\nend;"
+
+    return prog
+    
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hcse", ["--help"])
+        opts, args = getopt.getopt(sys.argv[1:], "hcseml", ["--help"])
     except getopt.GetoptError:
         usage(sys.stderr)
         sys.exit(2)
 
-    count_only = 0
-    stats = 0
-    edge_occ = 0
+    count_only = False
+    stats = False
+    is_edge_occ = False
+    just_mathprog = False
+    just_cplex = False
     for o, a in opts:
         if o in ("-h", "--help"):
             usage(sys.stdout)
             sys.exit(0)
         if o == "-e":
-            edge_occ = 1
+            is_edge_occ = True
         if o == "-c":
-            count_only = 1
+            count_only = True
         if o == "-s":
-            count_only = 1
-            stats = 1
+            count_only = True
+            stats = True
+        if o == "-m":
+            just_mathprog = True
+        if o == "-l":
+            just_cplex = True
 
     edges = []
     vertex_names = {}
@@ -66,66 +115,19 @@ def main():
 
     n = len(vertex_numbers)
     m = len(edges)
+    prog = mathprog_lp(vertex_numbers, edges, is_edge_occ)
 
-    if edge_occ:
-        occ_range = "m"
-    else:
-        occ_range = "n"
+    if just_mathprog:
+        print prog
+        sys.exit(0)
 
-    #glpsol_in, glpsol_out = os.popen2("glpsol --math /dev/stdin --display /dev/null --output /dev/stdout")
     glpsol = popen2.Popen3("glpsol --math /dev/stdin --display /dev/null --output /dev/stdout")
-
     glpsol_in  = glpsol.tochild
     glpsol_out = glpsol.fromchild
 
-    print >> glpsol_in, \
-"""
-param n > 0 integer;
-param m > 0 integer;
-
-param v1{0..m-1}, >= 0;
-param v2{0..m-1}, >= 0;
-"""
-    if edge_occ:
-        print >> glpsol_in, \
-"""
-var occ{0..%s-1} binary;
-var p{0..n-1} binary;
-
-minimize obj: sum{i in 0..%s-1} occ[i];
-
-""" % (occ_range, occ_range)
-
-    if edge_occ:
-        print >> glpsol_in, \
-"""
-s.t.	neq1{i in 0..m-1}: p[v1[i]] + p[v2[i]] + occ[i] >= 1;
-	neq2{i in 0..m-1}: p[v1[i]] + p[v2[i]] - occ[i] <= 1;
-"""
-    else:
-        print >> glpsol_in, \
-"""
-s.t.	neq1{i in 0..m-1}: p[v1[i]] + p[v2[i]] + occ[v1[i]] + occ[v2[i]] >= 1;
-	neq2{i in 0..m-1}: p[v1[i]] + p[v2[i]] - occ[v1[i]] - occ[v2[i]] <= 1;
-"""
-    print >> glpsol_in, \
-"""
-data;
-
-param n := %d;
-param m := %d;
-        
-""" % (n, m)
-
-    print >> glpsol_in, "param v1 :="
-    for i in range(0, len(edges)):
-        print >> glpsol_in, "\t%2d %2d," % (i, edges[i][0])
-    print >> glpsol_in, ";\n\nparam v2 :="
-    for i in range(0, len(edges)):
-        print >> glpsol_in, "\t%2d %2d," % (i, edges[i][1])
-    print >> glpsol_in, ";\n\nend;"
-
+    print >> glpsol_in, prog
     glpsol_in.close()
+
     output = glpsol_out.readlines()
     status = glpsol.wait()
     failed = os.WIFSIGNALED(status) or os.WEXITSTATUS(status) != 0
@@ -143,7 +145,7 @@ param m := %d;
             if int(match.groups()[1]):
                 if not count_only:
                     occ_el = int(match.groups()[0])
-                    if edge_occ:
+                    if is_edge_occ:
                         edge = edges[occ_el]
                         print vertex_names[edge[0]], vertex_names[edge[1]]
                     else:
