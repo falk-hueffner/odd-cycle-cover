@@ -11,6 +11,9 @@ val create : unit -> t
 val size : t -> int
 (** Returns the highest number of a vertex that was connected, plus one.  *)
 
+val grow : t -> int -> unit
+(** [grow g t] makes sure [size g] will return at least [t].  *)
+
 val copy : t -> t
 (** Returns a copy of a graph.  *)
 
@@ -38,3 +41,12 @@ val delete_vertex : t -> int -> unit
 val subgraph : t -> BitVec.t -> t
 (** [subgraph g s] returns a copy of [g] where all edges where not both end
     points are in [s]  are removed.  *)
+
+val output : out_channel -> t -> unit
+(** [output c g] prints a debug representation of [g] to channel [c].  *)
+
+val print : t -> unit
+(** [print g] is the same as [output stdout g].  *)
+
+val dump : t -> unit
+(** [dump g] is the same as [output stderr g].  *)

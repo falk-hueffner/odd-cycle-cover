@@ -31,6 +31,16 @@ let array_filter f a =
     Array.of_list (List.rev l)
 ;;
 
+let grow g size' =
+  if size' > size g then
+    g.edges <-
+    Array.init size'
+      (fun i ->
+	 if i < size g
+	 then Array.copy (g.edges.(i))
+	 else [||]);
+;;
+
 let is_connected g v u = (v < size g) && array_contains (g.edges.(v)) u;;
 
 let connect g u v =
@@ -38,13 +48,7 @@ let connect g u v =
   if not (is_connected g u v)
   then
     let size' = (max u v) + 1 in
-      if size' > size g then
-	g.edges <-
-	Array.init size'
-	  (fun i ->
-	     if i < size g
-	     then Array.copy (g.edges.(i))
-	     else [||]);
+      grow g size';
       g.edges.(u) <- array_append g.edges.(u) v;
       g.edges.(v) <- array_append g.edges.(v) u;
 ;;
