@@ -221,6 +221,7 @@ bool occ_is_occ(const struct graph *g, const struct bitvec *occ) {
 struct problem {
     const struct graph *g;	// The input graph
     struct graph *g_prime;	// G' as described by Reed et al.
+    struct graph *g_prime_bak;	// Same with no vertices deleted
     size_t occ_size;		// Size of occ_vertices
     const struct bitvec *occ;	// The known OCC
     const vertex *occ_vertices;	// Array with the vertices in OCC
@@ -402,6 +403,7 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
     } else {
 	v = *qhead++;
     }
+    vertex v2 = problem->clones[v];
 
     assert(colors[v] == GREY);
     enum color color = GREY;
@@ -423,6 +425,8 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
     }
 
     bitvec_set(subgraph, v);
+    problem->g_prime->vertices[v] = problem->g_prime_bak->vertices[v];
+    problem->g_prime->vertices[v2] = problem->g_prime_bak->vertices[v2];
 
     bool was_grey = color == GREY;
     if (was_grey)
@@ -448,18 +452,13 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
     bitvec_unset(subgraph, v);
     bitvec_copy(in_queue, in_queue_backup);
     qtail = qtail_backup;
+    problem->g_prime->vertices[v] = NULL;
+    problem->g_prime->vertices[problem->clones[v]] = NULL;
 
 try_red:
     colors[v] = RED;
-    vertex v2 = problem->clones[v];
-    struct vertex *v_bak = problem->g_prime->vertices[v];
-    struct vertex *v2_bak = problem->g_prime->vertices[v2];
-    problem->g_prime->vertices[v] = NULL;
-    problem->g_prime->vertices[v2] = NULL;
     new_occ = bipsub_branch(problem, g, colors, subgraph,
 			    in_queue, qhead, qtail);
-    problem->g_prime->vertices[v] = v_bak;
-    problem->g_prime->vertices[v2] = v2_bak;
     if (new_occ)
 	return new_occ;
     colors[v] = GREY;
@@ -480,6 +479,15 @@ static struct bitvec *enum_occ_subsets_bipartite(struct problem *problem) {
     ALLOCA_BITVEC(in_queue, occ_sub->size);
     vertex queue[occ_sub->size];
     vertex *qtail = queue;
+
+    problem->g_prime_bak = graph_copy(problem->g_prime);
+    for (size_t i = 0;
+	 i < problem->occ_size - (problem->last_not_in_occ ? 1 : 0); i++) {
+	vertex v = problem->occ_vertices[i];
+	vertex clone = problem->clones[v];
+	problem->g_prime->vertices[v] = NULL;
+	problem->g_prime->vertices[clone] = NULL;
+    }
 
     if (problem->last_not_in_occ) {
 	vertex last = problem->occ_vertices[problem->occ_size - 1], w;
