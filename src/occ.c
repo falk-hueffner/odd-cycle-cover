@@ -365,6 +365,7 @@ static struct bitvec* bipsub_findcut(struct problem *problem,
 	cut = bitvec_make(g2->size);
 	flow_vertex_cut(&flow, g2, sources, cut);
     }
+    flow_free(&flow);
 #else
     cut = small_cut_partition(g2, subgraph, clones, problem->use_gray);
 #endif
