@@ -11,22 +11,22 @@ typedef bool port_t;
 
 struct flow flow_make(size_t size) {
     struct flow flow = (struct flow) {
-	.edge_flow   = malloc(size * sizeof (struct bitvec *)),
-	.vertex_flow = bitvec_make(size),
+	.edge_flow   = malloc(size * sizeof (bool *)),
+	.vertex_flow = calloc(size, sizeof (bool)),
 	.flow        = 0,
 	.size        = size,
     };
 
-    for (unsigned i = 0; i < size; ++i)
-	flow.edge_flow[i] = bitvec_make(size);
+    for (size_t i = 0; i < size; ++i)
+	flow.edge_flow[i] = calloc(size, sizeof (bool));
 
     return flow;
 }
 
 void flow_clear(struct flow *flow) {
-    for (unsigned i = 0; i < flow->size; ++i)
-	bitvec_clear(flow->edge_flow[i]);
-    bitvec_clear(flow->vertex_flow);
+    for (size_t i = 0; i < flow->size; ++i)
+	memset(flow->edge_flow[i], 0, flow->size * sizeof (bool));
+    memset(flow->vertex_flow, 0, flow->size * sizeof (bool));
     flow->flow = 0;
 }
 
@@ -47,7 +47,7 @@ bool flow_augment(struct flow *flow, const struct graph *g,
     vertex *qhead = queue, *qtail = queue;
     for (size_t v = bitvec_find(sources, 0); v != BITVEC_NOT_FOUND;
 	 v = bitvec_find(sources, v + 1)) {
-	if (!bitvec_get(flow->vertex_flow, v)) {
+	if (!flow->vertex_flow[v]) {
 	    vertex vcode = (v << 1) | OUT;
 	    predecessors[vcode] = v;
 	    *qtail++ = vcode;
@@ -64,17 +64,17 @@ bool flow_augment(struct flow *flow, const struct graph *g,
 
 	GRAPH_NEIGHBORS_ITER(g, v, w) {
 	    vertex wcode = (w << 1) | wport;
-	    if ((port == OUT ? !bitvec_get(flow->edge_flow[v], w)
-			     :  bitvec_get(flow->edge_flow[w], v))
+	    if ((port == OUT ? !flow->edge_flow[v][w]
+			     :  flow->edge_flow[w][v])
 		&& !seen[wcode]) {
 		predecessors[wcode] = v;
-		
+
 		*qtail++ = wcode;
-		seen[wcode] = 1;
+		seen[wcode] = true;
 
 		vertex w2code = wcode ^ 1;
 		if (!seen[w2code]
-		    && bitvec_get(flow->vertex_flow, w) == (port == IN)) {
+		    && flow->vertex_flow[w] == (port == IN)) {
 		    predecessors[w2code] = w;
 		    if (bitvec_get(targets, w)) {
 			assert (port == OUT);
@@ -82,7 +82,7 @@ bool flow_augment(struct flow *flow, const struct graph *g,
 			goto found;
 		    }
 		    *qtail++ = w2code;
-		    seen[w2code] = 1;
+		    seen[w2code] = true;
 		}
 	    }
 	}
@@ -97,12 +97,12 @@ found:;
 	port_t p_port = s_port ^ 1;
 
 	if (p == s) {
-	    bitvec_toggle(flow->vertex_flow, p);
+	    flow->vertex_flow[p] ^= 1;
 	} else {
 	    if (p_port == OUT)
-		bitvec_toggle(flow->edge_flow[p], s);
+		flow->edge_flow[p][s] ^= 1;
 	    else
-		bitvec_toggle(flow->edge_flow[s], p);
+		flow->edge_flow[s][p] ^= 1;
 	}
 	if (bitvec_get(sources, p) && p_port == IN) {
 	    flow->flow++;
@@ -134,7 +134,7 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
     for (size_t v = bitvec_find(sources, 0); v != BITVEC_NOT_FOUND;
 	 v = bitvec_find(sources, v + 1)) {
 	bitvec_set(seen, v);
-	if (!bitvec_get(flow->vertex_flow, v)) {
+	if (!flow->vertex_flow[v]) {
 	    vertex vcode = (v << 1) | OUT;
 	    *qtail++ = vcode;
 	    bitvec_set(enqueued, vcode);
@@ -154,8 +154,8 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
 		continue;
 	    if (port == OUT)
 		bitvec_set(seen, w);
-	    if (port == OUT ? !bitvec_get(flow->edge_flow[v], w)
-			    :  bitvec_get(flow->edge_flow[w], v)) {
+	    if (port == OUT ? !flow->edge_flow[v][w]
+			    :  flow->edge_flow[w][v]) {
 		*qtail++ = wcode;
 		bitvec_set(enqueued, wcode);
 		if (wport == OUT)
@@ -163,7 +163,7 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
 
 		vertex w2code = wcode ^ 1;
 		if (!bitvec_get(enqueued, w2code)
-		    && bitvec_get(flow->vertex_flow, w) == (port == IN)) {
+		    && flow->vertex_flow[w] == (port == IN)) {
 		    *qtail++ = w2code;
 		    bitvec_set(enqueued, w2code);
 		    if (port == OUT)
@@ -181,12 +181,12 @@ void flow_dump(const struct flow *flow) {
     fprintf(stderr, "{ flow %u:\n", flow->flow);
     for (unsigned i = 0; i < flow->size; ++i) {
 	for (unsigned j = 0; j < flow->size; ++j) {
-	    if (bitvec_get(flow->edge_flow[i], j))
+	    if (flow->edge_flow[i][j])
 		fprintf(stderr, "%u -> %u\n", i, j);	    
 	}	
     }
     for (unsigned i = 0; i < flow->size; ++i)
-	if (bitvec_get(flow->vertex_flow, i))
+	if (flow->vertex_flow[i])
 	    fprintf(stderr, "%u -> %u\n", i, i);
     fprintf(stderr, "}\n");
 }

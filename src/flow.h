@@ -3,12 +3,11 @@
 
 #include <stdbool.h>
 
-struct bitvec;
 struct graph;
 
 struct flow {
-    struct bitvec **edge_flow;  /* Flows Out v -> In  u  (u <> v) */
-    struct bitvec *vertex_flow; /* Flows In  v -> Out v */
+    bool **edge_flow;		/* Flows Out v -> In  u  (u <> v) */
+    bool *vertex_flow;		/* Flows In  v -> Out v */
     unsigned flow, size;
 };
 
