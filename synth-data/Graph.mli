@@ -27,6 +27,10 @@ val is_connected : t -> int -> int -> bool
 val iter_neighbors : (int -> unit) -> t -> int -> unit
 (** [iter_neighbors f g v] calls [f w] for each neighbor [w] of [v] in [g].  *)
 
+val fold_neighbors : ('a -> int -> 'a) -> 'a -> t -> int -> 'a
+(** [iter_neighbors f x g v] is [f (...(f x v1) ... vn)] for each
+    neighbor [vi] of [v] in [g].  *)
+
 val neighbors_array : t -> int -> int array
 (** [neighbors_array g v] returns an array with the neighbors of [v]
     in [g].  *)

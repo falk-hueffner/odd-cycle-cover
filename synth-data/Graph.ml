@@ -54,6 +54,7 @@ let connect g u v =
 ;;
 
 let iter_neighbors f g v = Array.iter f (g.edges.(v));;
+let fold_neighbors f x g v = Array.fold_left f x (g.edges.(v));;
 let iter_neighbors' f g v = f v; Array.iter f (g.edges.(v));;
 
 let neighbors_array g v = g.edges.(v);;

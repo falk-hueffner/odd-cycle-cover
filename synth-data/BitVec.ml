@@ -83,7 +83,7 @@ let union s1 s2 =
 ;;
 
 let output channel s =
-  Printf.fprintf channel "[%d:" (length s);
+  Printf.fprintf channel "[%d:" (count s);
   iter (fun x -> Printf.fprintf channel " %d" x) s;
   output_char channel ']';
 ;;
