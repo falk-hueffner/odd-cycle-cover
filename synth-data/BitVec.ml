@@ -16,12 +16,6 @@ let unset  s n   = s.[n] <- nul;;
 let put    s n b = s.[n] <- if b then one else nul;;
 let toggle s n   = s.[n] <- if s.[n] <> nul then nul else one;;
 
-let of_list s l =
-  let s = create s in
-    List.iter (set s) l;
-    s
-;;
-
 let iter f s =
    for i = 0 to (length s) - 1 do
      if is_set s i then f i

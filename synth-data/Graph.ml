@@ -15,25 +15,6 @@ let array_append a x =
     Array.init (l + 1) (fun i -> if i < l then a.(i) else x)
 ;;
 
-let connect g u v =
-  let size' = (max u v) + 1 in
-    if size' > size g then
-      g.edges <-
-      Array.init size'
-	(fun i ->
-	   if i < size g
-	   then Array.copy (g.edges.(i))
-	   else [||]);
-    g.edges.(u) <- array_append g.edges.(u) v;
-    g.edges.(v) <- array_append g.edges.(v) u;
-;;
-
-let of_list l =
-  let g = create () in
-    List.iter (fun (u, v) -> connect g u v) l;
-    g;
-;;
-
 let array_contains a x =
   let rec loop i =
     if i >= Array.length a
@@ -51,6 +32,22 @@ let array_filter f a =
 ;;
 
 let is_connected g v u = (v < size g) && array_contains (g.edges.(v)) u;;
+
+let connect g u v =
+  assert (u <> v);
+  if not (is_connected g u v)
+  then
+    let size' = (max u v) + 1 in
+      if size' > size g then
+	g.edges <-
+	Array.init size'
+	  (fun i ->
+	     if i < size g
+	     then Array.copy (g.edges.(i))
+	     else [||]);
+      g.edges.(u) <- array_append g.edges.(u) v;
+      g.edges.(v) <- array_append g.edges.(v) u;
+;;
 
 let iter_neighbors f g v = Array.iter f (g.edges.(v));;
 let iter_neighbors' f g v = f v; Array.iter f (g.edges.(v));;
