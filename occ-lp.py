@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import string, sys, tempfile, os, re
+import string, sys, os, re
 
 def main():    
     edges = []
@@ -17,8 +17,6 @@ def main():
 """param n > 0 integer;
 param m > 0 integer;
 
-set I := 1..m;		/* Edge index set  */
-
 param v1{0..m-1}, >= 0;
 param v2{0..m-1}, >= 0;
 
@@ -32,10 +30,10 @@ s.t.	neq1{i in 0..m-1}: p[v1[i]] + p[v2[i]] + occ[v1[i]] + occ[v2[i]] >= 1;
 
 data;
 
-param n := %(n)d;
-param m := %(m)d;
+param n := %d;
+param m := %d;
         
-""" % { 'n': n, 'm': m }
+""" % (n, m)
 
     print >> glpsol_in, "param v1 :="
     for i in range(0, len(edges)):
@@ -47,6 +45,11 @@ param m := %(m)d;
 
     glpsol_in.close()
 
+    # example output:
+    #    No. Column name       Activity     Lower bound   Upper bound
+    #------ ------------    ------------- ------------- -------------
+    #     1 occ[0]       *              1             0             1
+    #     2 occ[1]       *              0             0             1
     occpat = re.compile('.*occ\[(\d+)\]\s+\*\s+(\d+)')
     for line in glpsol_out.readlines():
         m = occpat.match(line)
