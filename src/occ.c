@@ -8,6 +8,8 @@
 #include "graph.h"
 #include "occ.h"
 
+extern bool verbose;
+
 struct graph *occ_gprime(const struct graph *g, const struct bitvec *occ,
 			 vertex *origs) {
     size_t size = g->size;
@@ -42,7 +44,8 @@ struct graph *occ_gprime(const struct graph *g, const struct bitvec *occ,
 
 struct bitvec *small_cut_partition(const struct graph *g,
 				   const struct bitvec *yv1,
-				   const struct bitvec *yv2) {
+				   const struct bitvec *yv2,
+				   bool use_gray) {
     size_t size = g->size;
     size_t ysize = bitvec_count(yv1);
     assert(ysize < 63);
@@ -75,9 +78,14 @@ struct bitvec *small_cut_partition(const struct graph *g,
     uint64_t code = 0, code_end = 1ULL << (ysize - 1);
     struct bitvec *cut = NULL;
     while (true) {
-	flow_clear(&flow);
-	while (flow.flow < ysize && flow_augment(&flow, g, sources, source_vertices, targets))
-            continue;
+	if (!use_gray) {
+	    flow_clear(&flow);
+	    while (flow.flow < ysize && flow_augment(&flow, g, sources, source_vertices, targets))
+		continue;
+	} else {
+	    while (flow.flow < ysize && flow_augment(&flow, g, sources, source_vertices, targets))
+		continue;
+	}
 
 	if (flow.flow < ysize) {
 	    cut = bitvec_make(size);
@@ -89,6 +97,25 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	    break;
 
 	size_t x = gray_change(code);
+
+	if (use_gray) {
+	    if (bitvec_get(sources, y1[x])) {
+		flow_drain_source(&flow, g, y1[x], targets);
+	    } else {
+		assert(bitvec_get(sources, y2[x]));
+		flow_drain_source(&flow, g, y2[x], targets);
+	    }
+	    if (bitvec_get(targets, y1[x])) {
+		// might already be drained by previous drain action
+		if (flow.vertex_flow[y1[x]])
+		    flow_drain_target(&flow, g, sources, y1[x]);
+	    } else {
+		assert(bitvec_get(targets, y2[x]));
+		if (flow.vertex_flow[y2[x]])
+		    flow_drain_target(&flow, g, sources, y2[x]);
+	    }
+	}
+	
 	bitvec_toggle(sources, y1[x]);
 	bitvec_toggle(targets, y1[x]);
 	bitvec_toggle(sources, y2[x]);
@@ -112,7 +139,8 @@ bool occ_is_occ(const struct graph *g, const struct bitvec *occ) {
 }
 
 struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
-			  bool last_not_in_occ) {
+			  bool last_not_in_occ, bool use_gray) {
+    uint64_t subsets_examined = 0;
     assert(occ_is_occ(g, occ));
     size_t size = g->size;
     size_t ysize = bitvec_count(occ);
@@ -161,11 +189,15 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
 	}
 	graph_free(t);
 #endif
+	subsets_examined++;
 	struct graph *g2 = graph_subgraph(g_prime, sub);	
-	struct bitvec *cut = small_cut_partition(g2, y_origs, y_clones);
+	struct bitvec *cut = small_cut_partition(g2, y_origs, y_clones, use_gray);
 	graph_free(g2);
 
 	if (cut) {
+	    if (verbose)
+		fprintf(stderr, "found small cut after %llu subsets examined\n",
+			subsets_examined);
 	    new_occ = bitvec_make(size);
 	    bitvec_copy(new_occ, occ);
 	    bitvec_setminus(new_occ, y_origs);
@@ -190,5 +222,6 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
     }
 done:
     graph_free(g_prime);
+
     return new_occ;
 }

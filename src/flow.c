@@ -119,6 +119,104 @@ found:;
     return true;    
 }
 
+void flow_drain_source(struct flow *flow, const struct graph *g,
+		       vertex source, const struct bitvec *targets) {
+//    fprintf(stderr, "draining source %lu -> ", source); bitvec_dump(targets); flow_dump(flow);
+    size_t size = graph_size(g);
+    bool **edge_flow = flow->edge_flow;
+    bool *vertex_flow = flow->vertex_flow;
+    vertex predecessors[size];
+    bool seen[size];
+    memset(seen, 0, sizeof seen);
+    vertex queue[size];
+    vertex *qhead = queue, *qtail = queue;
+
+    assert(vertex_flow[source]);
+
+    *qtail++ = source;
+    seen[source] = true;
+
+    vertex target = 0;		/* quench compiler warning */
+    while (qhead != qtail) {
+	vertex v = *qhead++, w;
+	bool *edge_flow_v = edge_flow[v];
+	GRAPH_NEIGHBORS_ITER(g, v, w) {
+	    if (edge_flow_v[w]) {
+		assert(vertex_flow[w]);
+		predecessors[w] = v;
+		*qtail++ = w;
+		seen[w] = true;
+		if (bitvec_get(targets, w)) {
+		    target = w;
+		    goto found;
+		}
+	    }
+	}
+    }
+    assert(0);
+
+found:
+    while (true) {
+	vertex_flow[target] = 0;
+	if (target == source)
+	    break;
+
+	vertex p = predecessors[target];
+	edge_flow[p][target] = 0;
+	target = p;	
+    }    
+    flow->flow--;
+}
+
+
+void flow_drain_target(struct flow *flow, const struct graph *g,
+		       const struct bitvec *sources, vertex target) {
+
+    size_t size = graph_size(g);
+    bool **edge_flow = flow->edge_flow;
+    bool *vertex_flow = flow->vertex_flow;
+    vertex successors[size];
+    bool seen[size];
+    memset(seen, 0, sizeof seen);
+    vertex queue[size];
+    vertex *qhead = queue, *qtail = queue;
+
+    assert(vertex_flow[target]);
+
+    *qtail++ = target;
+    seen[target] = true;
+
+    vertex source = 0;		/* quench compiler warning */
+    while (qhead != qtail) {
+	vertex v = *qhead++, w;
+	GRAPH_NEIGHBORS_ITER(g, v, w) {
+	    if (edge_flow[w][v]) {
+		assert(vertex_flow[w]);
+		successors[w] = v;
+		*qtail++ = w;
+		seen[w] = true;
+		if (bitvec_get(sources, w)) {
+		    source = w;
+		    goto found;
+		}
+	    }
+	}
+    }
+    assert(0);
+
+found:
+    while (true) {
+	vertex_flow[source] = 0;
+	if (source == target)
+	    break;
+
+	vertex succ = successors[source];
+	edge_flow[source][succ] = 0;
+	source = succ;
+    }
+    flow->flow--;
+}
+
 void flow_vertex_cut(const struct flow *flow, const struct graph *g,
                      const struct bitvec *sources, struct bitvec *cut) {
     size_t size = graph_size(g);

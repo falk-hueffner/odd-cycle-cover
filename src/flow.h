@@ -18,7 +18,12 @@ void flow_free(struct flow *flow);
 bool flow_augment(struct flow *flow, const struct graph *g,
                   const struct bitvec *sources, const vertex *source_vertices,
 		  const struct bitvec *targets);
+void flow_drain_source(struct flow *flow, const struct graph *g,
+		       vertex source, const struct bitvec *targets);
+void flow_drain_target(struct flow *flow, const struct graph *g,
+		       const struct bitvec *sources, vertex target);
 void flow_vertex_cut(const struct flow *flow, const struct graph *g,
                      const struct bitvec *sources, struct bitvec *cut);
+void flow_dump(const struct flow *flow);
 
 #endif

@@ -58,7 +58,7 @@ void bitvec_output(const struct bitvec *v, FILE *stream) {
     for (size_t i = bitvec_find(v, 0); i != BITVEC_NOT_FOUND;
 	 i = bitvec_find(v, i + 1))
 	fprintf(stream, " %zd", i);
-    fprintf(stream, "]\n");
+    fprintf(stream, "]");
 }
 
 void bitvec_clear(struct bitvec *v) {
