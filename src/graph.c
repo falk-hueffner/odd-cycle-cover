@@ -118,10 +118,10 @@ void graph_disconnect(struct graph *g, vertex v, vertex w) {
 }
 
 void graph_vertex_disable(struct graph *g, vertex v) {
-    *(size_t *) g->vertices[v] |= (size_t) 1;
+    ((size_t *) g->vertices)[v] |= (size_t) 1;
 }
 void graph_vertex_enable(struct graph *g, vertex v) {
-    *(size_t *) g->vertices[v] &= ~(size_t) 1;
+    ((size_t *) g->vertices)[v] &= ~(size_t) 1;
 }
 
 struct graph *graph_subgraph(const struct graph *g, const struct bitvec *s) {
