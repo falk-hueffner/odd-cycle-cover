@@ -9,8 +9,9 @@
 struct flow {
     const struct graph *g;
     size_t flow;
-    vertex *come_from;
-    vertex *go_to;
+    struct {
+	vertex come_from, go_to;
+    } flows[];
 };
 
 typedef bool port_t;
@@ -24,29 +25,24 @@ size_t flow_flow(const struct flow *flow) {
 }
 
 bool flow_vertex_flow(const struct flow *flow, vertex v) {
-    return flow->go_to[v] != NULL_VERTEX || flow->come_from[v] != NULL_VERTEX;
+    return flow->flows[v].go_to != NULL_VERTEX || flow->flows[v].come_from != NULL_VERTEX;
 }
 bool flow_is_source(const struct flow *flow, vertex v) {
-    return flow->go_to[v] != NULL_VERTEX && flow->come_from[v] == NULL_VERTEX;
+    return flow->flows[v].go_to != NULL_VERTEX && flow->flows[v].come_from == NULL_VERTEX;
 }
 bool flow_is_target(const struct flow *flow, vertex v) {
-    return flow->go_to[v] == NULL_VERTEX && flow->come_from[v] != NULL_VERTEX;
+    return flow->flows[v].go_to == NULL_VERTEX && flow->flows[v].come_from != NULL_VERTEX;
 }
 
 void flow_clear(struct flow *flow) {
     for (size_t i = 0; i < flow->g->size; ++i)
-	flow->come_from[i] = flow->go_to[i] = NULL_VERTEX;
+	flow->flows[i].come_from = flow->flows[i].go_to = NULL_VERTEX;
     flow->flow = 0;
 }
 
 struct flow* flow_make(const struct graph *g) {
-    struct flow* flow = malloc(sizeof (*flow));
-    *flow = (struct flow) {
-	.g         = g,
-	.flow      = 0,
-	.come_from = malloc(g->size * sizeof (flow->come_from)),
-	.go_to     = malloc(g->size * sizeof (flow->go_to)),
-    };
+    struct flow* flow = calloc(sizeof (*flow) + g->size * sizeof *flow->flows, 1);
+    flow->g = g;
 
     flow_clear(flow);
 
@@ -54,32 +50,31 @@ struct flow* flow_make(const struct graph *g) {
 }
 
 void flow_free(struct flow *flow) {
-    free(flow->come_from);
-    free(flow->go_to);
+    free(flow);
 }
 
 UNUSED static void verify_flow(const struct flow *flow,
 			       const struct bitvec *sources,
 			       const struct bitvec *targets) {
     for (size_t i = 0; i < flow->g->size; i++) {
-	if (flow->go_to[i] != NULL_VERTEX) {
-	    if (!(flow->come_from[flow->go_to[i]] == i))
+	if (flow->flows[i].go_to != NULL_VERTEX) {
+	    if (!(flow->flows[flow->flows[i].go_to].come_from == i))
 		fprintf(stderr, "i = %zd", i);
-	    assert(flow->come_from[flow->go_to[i]] == i);
+	    assert(flow->flows[flow->flows[i].go_to].come_from == i);
 	    if (!bitvec_get(sources, i)) {
-		assert(flow->come_from[i] != NULL_VERTEX);
-		assert(flow->go_to[flow->come_from[i]] == i);
+		assert(flow->flows[i].come_from != NULL_VERTEX);
+		assert(flow->flows[flow->flows[i].come_from].go_to == i);
 	    } else {
-		assert(flow->come_from[i] == NULL_VERTEX);
+		assert(flow->flows[i].come_from == NULL_VERTEX);
 	    }
 	}
-	if (flow->come_from[i] != NULL_VERTEX) {
-	    assert(flow->go_to[flow->come_from[i]] == i);
+	if (flow->flows[i].come_from != NULL_VERTEX) {
+	    assert(flow->flows[flow->flows[i].come_from].go_to == i);
 	    if (!bitvec_get(targets, i)) {
-		assert(flow->go_to[i] != NULL_VERTEX);
-		assert(flow->come_from[flow->go_to[i]] == i);
+		assert(flow->flows[i].go_to != NULL_VERTEX);
+		assert(flow->flows[flow->flows[i].go_to].come_from == i);
 	    } else {
-		assert(flow->go_to[i] == NULL_VERTEX);
+		assert(flow->flows[i].go_to == NULL_VERTEX);
 	    }
 	}
     }
@@ -94,7 +89,7 @@ bool flow_augment(struct flow *flow, const struct bitvec *sources,
     vertex queue[size * 2];
     vertex *qhead = queue, *qtail = queue;
     BITVEC_ITER(sources, v) {
-	if (flow->go_to[v] == NULL_VERTEX) {
+	if (flow->flows[v].go_to == NULL_VERTEX) {
 	    vertex vcode = (v << 1) | OUT;
 	    predecessors[vcode] = v;
 	    *qtail++ = vcode;
@@ -109,7 +104,7 @@ bool flow_augment(struct flow *flow, const struct bitvec *sources,
 	vertex v = vcode >>= 1, w;
 
 	if (port == OUT) {
-	    vertex v_go_to = flow->go_to[v];
+	    vertex v_go_to = flow->flows[v].go_to;
 	    GRAPH_NEIGHBORS_ITER(flow->g, v, w) {
 		if (!graph_vertex_exists(flow->g, w))
 		    continue;
@@ -133,7 +128,7 @@ bool flow_augment(struct flow *flow, const struct bitvec *sources,
 		}
 	    }
 	} else {
-	    w = flow->come_from[v];
+	    w = flow->flows[v].come_from;
 	    if (w != NULL_VERTEX) {
 		vertex wcode = (w << 1) | OUT;
 		if (!seen[wcode]) {
@@ -162,13 +157,13 @@ found:;
 
 	if (s == t) {
 	    if (s_port == OUT) {
-		flow->go_to[s] = NULL_VERTEX;
-		flow->come_from[s] = NULL_VERTEX;
+		flow->flows[s].go_to = NULL_VERTEX;
+		flow->flows[s].come_from = NULL_VERTEX;
 	    }
 	} else {
 	    if (s_port == OUT) {
-		flow->come_from[t] = s;
-		flow->go_to[s] = t;
+		flow->flows[t].come_from = s;
+		flow->flows[s].go_to = t;
 	    }
 	}
 	if (bitvec_get(sources, s) && s_port == IN) {
@@ -189,7 +184,7 @@ bool flow_augment_pair(struct flow *flow, vertex source, vertex target) {
     memset(seen, 0, sizeof seen);
     vertex queue[size * 2];
     vertex *qhead = queue, *qtail = queue;
-    assert(flow->go_to[source] == NULL_VERTEX);
+    assert(flow->flows[source].go_to == NULL_VERTEX);
     vertex sourcecode = (source << 1) | OUT;
     predecessors[sourcecode] = source;
     *qtail++ = sourcecode;
@@ -205,7 +200,7 @@ bool flow_augment_pair(struct flow *flow, vertex source, vertex target) {
 		if (!graph_vertex_exists(flow->g, w))
 		    continue;
 		vertex wcode = (w << 1) | IN;
-		if (seen[wcode] || w == flow->go_to[v])
+		if (seen[wcode] || w == flow->flows[v].go_to)
 		    continue;
 
 		predecessors[wcode] = v;
@@ -222,7 +217,7 @@ bool flow_augment_pair(struct flow *flow, vertex source, vertex target) {
 		}
 	    }
 	} else {
-	    w = flow->come_from[v];
+	    w = flow->flows[v].come_from;
 	    if (w != NULL_VERTEX) {
 		assert(graph_vertex_exists(flow->g, w));
 		vertex wcode = (w << 1) | OUT;
@@ -252,13 +247,13 @@ found:;
 
 	if (s == t) {
 	    if (s_port == OUT) {
-		flow->go_to[s] = NULL_VERTEX;
-		flow->come_from[s] = NULL_VERTEX;
+		flow->flows[s].go_to = NULL_VERTEX;
+		flow->flows[s].come_from = NULL_VERTEX;
 	    }
 	} else {
 	    if (s_port == OUT) {
-		flow->come_from[t] = s;
-		flow->go_to[s] = t;
+		flow->flows[t].come_from = s;
+		flow->flows[s].go_to = t;
 	    }
 	}
 	if (s == source && s_port == IN) {
@@ -273,10 +268,10 @@ found:;
 
 vertex flow_drain_source(struct flow *flow, vertex source) {
     vertex v = source;
-    while (flow->go_to[v] != NULL_VERTEX) {
-	vertex succ = flow->go_to[v];
-	flow->go_to[v] = NULL_VERTEX;
-	flow->come_from[succ] = NULL_VERTEX;
+    while (flow->flows[v].go_to != NULL_VERTEX) {
+	vertex succ = flow->flows[v].go_to;
+	flow->flows[v].go_to = NULL_VERTEX;
+	flow->flows[succ].come_from = NULL_VERTEX;
 	v = succ;
     }
     flow->flow--;
@@ -285,10 +280,10 @@ vertex flow_drain_source(struct flow *flow, vertex source) {
 
 vertex flow_drain_target(struct flow *flow, vertex target) {
     vertex v = target;
-    while (flow->come_from[v] != NULL_VERTEX) {
-	vertex pred = flow->come_from[v];
-	flow->come_from[v] = NULL_VERTEX;
-	flow->go_to[pred] = NULL_VERTEX;
+    while (flow->flows[v].come_from != NULL_VERTEX) {
+	vertex pred = flow->flows[v].come_from;
+	flow->flows[v].come_from = NULL_VERTEX;
+	flow->flows[pred].go_to = NULL_VERTEX;
 	v = pred;
     }
     flow->flow--;
@@ -330,8 +325,8 @@ struct bitvec *flow_vertex_cut(const struct flow *flow,
 		continue;
 	    if (port == OUT)
 		bitvec_set(seen, w);
-	    if (port == OUT ? w != flow->go_to[v]
-			    : w == flow->come_from[v]) {
+	    if (port == OUT ? w != flow->flows[v].go_to
+			    : w == flow->flows[v].come_from) {
 		*qtail++ = wcode;
 		bitvec_set(enqueued, wcode);
 		if (wport == OUT)
@@ -362,12 +357,12 @@ void flow_dump(const struct flow *flow) {
 	if (flow_is_source(flow, v)) {
 	    vertex prev = NULL_VERTEX;
 	    for (vertex w = v; w != NULL_VERTEX;
-		 prev = w, w = flow->go_to[w]) {
+		 prev = w, w = flow->flows[w].go_to) {
 		fprintf(stderr, " %d", (int) w);
 		bitvec_set(done, w);
-		if (prev != NULL_VERTEX && flow->come_from[w] != prev)
+		if (prev != NULL_VERTEX && flow->flows[w].come_from != prev)
 		    fprintf(stderr, " BAD come_from %d",
-			    (int) flow->come_from[w]);
+			    (int) flow->flows[w].come_from);
 	    }
 	    fprintf(stderr, "\n");
 	}
@@ -375,6 +370,6 @@ void flow_dump(const struct flow *flow) {
     for (size_t i = 0; i < flow->g->size; i++)
 	if (!bitvec_get(done, i) && flow_vertex_flow(flow, i))
 	    fprintf(stderr, " BAD dangling %d -> %d -> %d\n",
-		    (int) flow->come_from[i], (int) i, (int) flow->go_to[i]);
+		    (int) flow->flows[i].come_from, (int) i, (int) flow->flows[i].go_to);
     fprintf(stderr, "}\n");
 }
