@@ -24,6 +24,23 @@ size_t graph_num_edges(const struct graph *g) {
     return n / 2;
 }
 
+struct graph *graph_copy(const struct graph *g) {
+    struct graph *g2 = malloc(sizeof (struct graph)
+			      + g->size * sizeof (struct vertex *));
+    g2->capacity = g2->size = g->size;
+    for (size_t i = 0; i < g->size; i++) {
+	if (g->vertices[i] == NULL) {
+	    g2->vertices[i] = NULL;
+	} else {
+	    size_t bytes = (sizeof (struct vertex)
+			    + g->vertices[i]->deg * sizeof (vertex));
+	    g2->vertices[i] = malloc(bytes);
+	    memcpy(g2->vertices[i], g->vertices[i], bytes);
+	}
+    }
+    return g2;
+}
+
 struct graph *graph_grow(struct graph *g, size_t size) {
     if (size > g->capacity) {
 	g = realloc(g, sizeof (struct graph) + size * sizeof (struct vertex *));
