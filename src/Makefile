@@ -8,11 +8,13 @@ LIBS	=
 
 SOURCES	= \
 	bitvec.c	\
+	edge-flow.c	\
+	edge-occ.c	\
 	flow.c		\
 	graph.c		\
-	occ.c		\
-	main.c
-
+	hash-table.c	\
+	main.c		\
+	occ.c
 
 CCOMPILE = $(CC) $(CFLAGS)
 CLINK	= $(CC) $(CFLAGS) $(LDPATH) $(LIBS)
