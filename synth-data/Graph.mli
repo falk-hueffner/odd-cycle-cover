@@ -38,9 +38,8 @@ val fold_neighbors : ('a -> int -> 'a) -> 'a -> t -> int -> 'a
 (** [iter_neighbors f x g v] is [f (...(f x v1) ... vn)] for each
     neighbor [vi] of [v] in [g].  *)
 
-val neighbors_array : t -> int -> int FArray.t
-(** [neighbors_array g v] returns an array with the neighbors of [v]
-    in [g].  *)
+val neighbor : t -> int -> int -> int
+(** [neighbor g v i] returns the [i]-th neighbor of [v] in [g].  *)
 
 val iter_edges : (int -> int -> unit) -> t -> unit
 (** [iter_edges f g] calls [f u v] for each edge [(u, v)] in [g].  *)

@@ -34,6 +34,7 @@ let fold_neighbors f x g v = Array.fold_left f x g.(v);;
 let iter_neighbors' f g v = f v; Array.iter f g.(v);;
 
 let neighbors_array g v = g.(v);;
+let neighbor g v i = g.(v).(i);;
 
 let iter_edges f g =
   for v = 0 to (size g) - 1 do
