@@ -32,17 +32,20 @@ let iter_edges f g =
   done
 ;;
 
-let fold_edges f g x =
+let fold_edges f accu g =
   let rec loop u accu =
     if u >= size g
     then accu
     else
-      Array.fold_left
-	(fun accu v -> if u < v then f accu u v else accu)
-	accu
-	g.(u)
+      let accu = 
+	Array.fold_left
+	  (fun accu v -> if u < v then f accu u v else accu)
+	  accu
+	  g.(u)
+      in
+	loop (succ u) accu
   in
-    loop 0 x
+    loop 0 accu
 ;;
 
 let delete_vertex g v =  
