@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "bit-twiddling.h"
@@ -80,6 +81,7 @@ static inline void bitvec_put(struct bitvec *v, size_t n, bool b) {
 
 struct bitvec *bitvec_make(size_t num_bits);
 void bitvec_copy(struct bitvec *d, const struct bitvec *s);
+static inline void bitvec_free(struct bitvec *v) { free(v); }
 
 size_t bitvec_count(const struct bitvec *v);
 #define BITVEC_NOT_FOUND ((size_t) -1)
