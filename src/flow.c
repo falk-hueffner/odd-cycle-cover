@@ -9,12 +9,13 @@ typedef bool port_t;
 #define OUT true
 #define PORT(port) (port == IN ? "in" : "out")
 
-struct flow flow_make(size_t size) {
+struct flow flow_make(size_t size, size_t ysize) {
     struct flow flow = (struct flow) {
 	.edge_flow   = malloc(size * sizeof (bool *)),
 	.vertex_flow = calloc(size, sizeof (bool)),
 	.flow        = 0,
 	.size        = size,
+	.ysize       = ysize,
     };
 
     for (size_t i = 0; i < size; ++i)
@@ -38,7 +39,8 @@ void flow_free(struct flow *flow) {
 }
 
 bool flow_augment(struct flow *flow, const struct graph *g,
-                  const struct bitvec *sources, const struct bitvec *targets) {
+                  const struct bitvec *sources, const vertex *source_vertices,
+		  const struct bitvec *targets) {
     size_t size = graph_size(g);
     bool **edge_flow = flow->edge_flow;
     bool *vertex_flow = flow->vertex_flow;
@@ -47,8 +49,8 @@ bool flow_augment(struct flow *flow, const struct graph *g,
     memset(seen, 0, sizeof seen);
     vertex queue[size * 2];
     vertex *qhead = queue, *qtail = queue;
-    for (size_t v = bitvec_find(sources, 0); v != BITVEC_NOT_FOUND;
-	 v = bitvec_find(sources, v + 1)) {
+    for (size_t i = 0; i < flow->ysize; i++) {
+	vertex v = source_vertices[i];
 	if (!vertex_flow[v]) {
 	    vertex vcode = (v << 1) | OUT;
 	    predecessors[vcode] = v;
@@ -115,13 +117,6 @@ found:;
     }
 
     return true;    
-}
-
-void flow_saturate(struct flow *flow, const struct graph *g,
-		   const struct bitvec *sources, const struct bitvec *targets,
-		   size_t maxflow) {
-    while (flow->flow < maxflow && flow_augment(flow, g, sources, targets))
-	continue;
 }
 
 void flow_vertex_cut(const struct flow *flow, const struct graph *g,
