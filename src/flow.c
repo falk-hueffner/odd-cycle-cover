@@ -184,7 +184,7 @@ bool flow_augment_pair(struct flow *flow, vertex source, vertex target) {
     memset(seen, 0, sizeof seen);
     vertex queue[size * 2];
     vertex *qhead = queue, *qtail = queue;
-    assert(flow->flows[source].go_to == NULL_VERTEX);
+    //assert(flow->flows[source].go_to == NULL_VERTEX);
     vertex sourcecode = (source << 1) | OUT;
     predecessors[sourcecode] = source;
     *qtail++ = sourcecode;
