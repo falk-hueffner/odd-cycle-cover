@@ -17,7 +17,10 @@ SOURCES	= \
 	graph.c		\
 	hash-table.c	\
 	main.c		\
-	occ.c
+	occ.c		\
+	occ-gray.c	\
+	occ-heuristic.c
+
 
 CCOMPILE = $(CC) $(CFLAGS)
 CLINK	= $(CC) $(CFLAGS) $(LDPATH) $(LIBS)

@@ -34,7 +34,7 @@ void usage(FILE *stream) {
 bool verbose    = false;
 bool edge_occ	= false;
 bool downwards	= false;
-bool enum_2col  = false;
+bool enum2col   = false;
 bool use_gray   = false;
 bool stats_only = false;
 unsigned long long augmentations = 0;
@@ -60,7 +60,7 @@ struct bitvec *find_occ(const struct graph *g) {
 		bitvec_dump(occ);
 		putc('\n', stderr);
 	    }
-	    occ_new = occ_shrink(g, occ, enum_2col, use_gray, false);
+	    occ_new = occ_shrink(g, occ, enum2col, use_gray, false);
 	    if (!occ_new || bitvec_count(occ_new) == bitvec_count(occ))
 		break;
 	    free(occ);
@@ -84,7 +84,7 @@ struct bitvec *find_occ(const struct graph *g) {
 		bitvec_dump(occ);
 		putc('\n', stderr);
 	    }
-	    struct bitvec *occ_new = occ_shrink(g2, occ, enum_2col,
+	    struct bitvec *occ_new = occ_shrink(g2, occ, enum2col,
 						use_gray, true);
 	    if (occ_new) {
 		free(occ);
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 	switch (c) {
 	case 'e': edge_occ   = true; break;
 	case 'd': downwards  = true; break;
-	case 'b': enum_2col  = true; break;
+	case 'b': enum2col   = true; break;
 	case 'g': use_gray   = true; break;
 	case 'v': verbose    = true; break;
 	case 's': stats_only = true; break;
