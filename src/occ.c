@@ -151,19 +151,19 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	y2[i++] = v;
     assert (i = ysize);
 
-    struct flow *flow = flow_make(g->size);
+    struct flow *flow = flow_make(g);
     uint64_t code = 0, code_end = 1ULL << (ysize - 1);
     struct bitvec *cut = NULL;
     while (true) {
 	if (!use_gray) 
 	    flow_clear(flow);
 	while (flow_flow(flow) < ysize
-	       && flow_augment(flow, g, sources, targets))
+	       && flow_augment(flow, sources, targets))
 	    continue;
 
 	if (flow_flow(flow) < ysize) {
 	    cut = bitvec_make(size);
-	    flow_vertex_cut(flow, g, sources, cut);
+	    flow_vertex_cut(flow, sources, cut);
 	    break;
 	}
 
@@ -174,19 +174,19 @@ struct bitvec *small_cut_partition(const struct graph *g,
 
 	if (use_gray) {
 	    if (bitvec_get(sources, y1[x])) {
-		flow_drain_source(flow, g, y1[x]);
+		flow_drain_source(flow, y1[x]);
 	    } else {
 		assert(bitvec_get(sources, y2[x]));
-		flow_drain_source(flow, g, y2[x]);
+		flow_drain_source(flow, y2[x]);
 	    }
 	    if (bitvec_get(targets, y1[x])) {
 		// might already be drained by previous drain action
 		if (flow_vertex_flow(flow, y1[x]))
-		    flow_drain_target(flow, g, y1[x]);
+		    flow_drain_target(flow, y1[x]);
 	    } else {
 		assert(bitvec_get(targets, y2[x]));
 		if (flow_vertex_flow(flow, y2[x]))
-		    flow_drain_target(flow, g, y2[x]);
+		    flow_drain_target(flow, y2[x]);
 	    }
 	}
 	
@@ -306,7 +306,7 @@ static inline enum color invert_color(enum color c) {
 }
 
 void bipsub_add_pair(struct problem *problem, vertex s, vertex t) {
-    flow_augment_pair(problem->flow, problem->g_prime, s, t);
+    flow_augment_pair(problem->flow, s, t);
 }
 
 void bipsub_remove_pair(struct problem *problem, vertex v) {
@@ -320,14 +320,14 @@ void bipsub_remove_pair(struct problem *problem, vertex v) {
 	s = problem->clones[v];
 	t = v;
     }
-    vertex t2 = flow_drain_source(problem->flow, problem->g_prime, s);
+    vertex t2 = flow_drain_source(problem->flow, s);
     if (t2 != t) {
-	vertex s2 = flow_drain_target(problem->flow, problem->g_prime, t);
+	vertex s2 = flow_drain_target(problem->flow, t);
 	struct vertex *s_bak = problem->g_prime->vertices[s];
 	struct vertex *t_bak = problem->g_prime->vertices[t];
 	problem->g_prime->vertices[s] = NULL;
 	problem->g_prime->vertices[t] = NULL;
-	flow_augment_pair(problem->flow, problem->g_prime, s2, t2);
+	flow_augment_pair(problem->flow, s2, t2);
 	problem->g_prime->vertices[s] = s_bak;
 	problem->g_prime->vertices[t] = t_bak;
     }
@@ -348,7 +348,7 @@ static struct bitvec* bipsub_make_occ(struct problem *problem,
 	else
 	    bitvec_set(occ, v);
     }
-    flow_vertex_cut(problem->flow, problem->g_prime, sources, cut);
+    flow_vertex_cut(problem->flow, sources, cut);
     BITVEC_ITER(cut, v) {
 	if (v >= problem->g->size)
 	    v = problem->occ_vertices[v - problem->g->size];
@@ -470,7 +470,7 @@ static struct bitvec *enum_occ_subsets_bipartite(struct problem *problem) {
     vertex queue[occ_sub->size];
     vertex *qtail = queue;
 
-    problem->flow = flow_make(problem->g_prime->size);
+    problem->flow = flow_make(problem->g_prime);
     problem->g_prime_bak = graph_copy(problem->g_prime);
     for (size_t i = 0;
 	 i < problem->occ_size - (problem->last_not_in_occ ? 1 : 0); i++) {

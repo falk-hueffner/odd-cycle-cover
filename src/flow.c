@@ -7,7 +7,8 @@
 
 #define NULL_VERTEX ((vertex) -1)
 struct flow {
-    size_t size, flow;
+    const struct graph *g;
+    size_t flow;
     vertex *come_from;
     vertex *go_to;
 };
@@ -33,18 +34,18 @@ bool flow_is_target(const struct flow *flow, vertex v) {
 }
 
 void flow_clear(struct flow *flow) {
-    for (size_t i = 0; i < flow->size; ++i)
+    for (size_t i = 0; i < flow->g->size; ++i)
 	flow->come_from[i] = flow->go_to[i] = NULL_VERTEX;
     flow->flow = 0;
 }
 
-struct flow* flow_make(size_t size) {
+struct flow* flow_make(const struct graph *g) {
     struct flow* flow = malloc(sizeof (*flow));
     *flow = (struct flow) {
-	.size      = size,
+	.g         = g,
 	.flow      = 0,
-	.come_from = malloc(size * sizeof (flow->come_from)),
-	.go_to     = malloc(size * sizeof (flow->go_to)),
+	.come_from = malloc(g->size * sizeof (flow->come_from)),
+	.go_to     = malloc(g->size * sizeof (flow->go_to)),
     };
 
     flow_clear(flow);
@@ -60,7 +61,7 @@ void flow_free(struct flow *flow) {
 UNUSED static void verify_flow(const struct flow *flow,
 			       const struct bitvec *sources,
 			       const struct bitvec *targets) {
-    for (size_t i = 0; i < flow->size; i++) {
+    for (size_t i = 0; i < flow->g->size; i++) {
 	if (flow->go_to[i] != NULL_VERTEX) {
 	    if (!(flow->come_from[flow->go_to[i]] == i))
 		fprintf(stderr, "i = %zd", i);
@@ -84,10 +85,9 @@ UNUSED static void verify_flow(const struct flow *flow,
     }
 }
 
-bool flow_augment(struct flow *flow, const struct graph *g,
-                  const struct bitvec *sources,
+bool flow_augment(struct flow *flow, const struct bitvec *sources,
 		  const struct bitvec *targets) {
-    size_t size = graph_size(g);
+    size_t size = graph_size(flow->g);
     vertex predecessors[size * 2];
     bool seen[size * 2];
     memset(seen, 0, sizeof seen);
@@ -109,8 +109,8 @@ bool flow_augment(struct flow *flow, const struct graph *g,
 	vertex v = vcode >>= 1, w;
 
 	if (port == OUT) {
-	    GRAPH_NEIGHBORS_ITER(g, v, w) {
-		if (!graph_vertex_exists(g, w))
+	    GRAPH_NEIGHBORS_ITER(flow->g, v, w) {
+		if (!graph_vertex_exists(flow->g, w))
 		    continue;
 		vertex wcode = (w << 1) | IN;
 		if (seen[wcode] || w == flow->go_to[v])
@@ -181,9 +181,8 @@ found:;
     return true;    
 }
 
-void flow_augment_pair(struct flow *flow, const struct graph *g,
-		       vertex source, vertex target) {
-    size_t size = graph_size(g);
+void flow_augment_pair(struct flow *flow, vertex source, vertex target) {
+    size_t size = graph_size(flow->g);
     vertex predecessors[size * 2];
     bool seen[size * 2];
     memset(seen, 0, sizeof seen);
@@ -201,8 +200,8 @@ void flow_augment_pair(struct flow *flow, const struct graph *g,
 	vertex v = vcode >>= 1, w;
 
 	if (port == OUT) {
-	    GRAPH_NEIGHBORS_ITER(g, v, w) {
-		if (!graph_vertex_exists(g, w))
+	    GRAPH_NEIGHBORS_ITER(flow->g, v, w) {
+		if (!graph_vertex_exists(flow->g, w))
 		    continue;
 		vertex wcode = (w << 1) | IN;
 		if (seen[wcode] || w == flow->go_to[v])
@@ -224,7 +223,7 @@ void flow_augment_pair(struct flow *flow, const struct graph *g,
 	} else {
 	    w = flow->come_from[v];
 	    if (w != NULL_VERTEX) {
-		assert(graph_vertex_exists(g, w));
+		assert(graph_vertex_exists(flow->g, w));
 		vertex wcode = (w << 1) | OUT;
 		if (!seen[wcode]) {
 		    predecessors[wcode] = v;
@@ -270,8 +269,7 @@ found:;
     }
 }
 
-vertex flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
-			 vertex source) {
+vertex flow_drain_source(struct flow *flow, vertex source) {
     vertex v = source;
     while (flow->go_to[v] != NULL_VERTEX) {
 	vertex succ = flow->go_to[v];
@@ -283,8 +281,7 @@ vertex flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
     return v;
 }
 
-vertex flow_drain_target(struct flow *flow, UNUSED const struct graph *g,
-			 vertex target) {
+vertex flow_drain_target(struct flow *flow, vertex target) {
     vertex v = target;
     while (flow->come_from[v] != NULL_VERTEX) {
 	vertex pred = flow->come_from[v];
@@ -296,9 +293,9 @@ vertex flow_drain_target(struct flow *flow, UNUSED const struct graph *g,
     return v;
 }
 
-void flow_vertex_cut(const struct flow *flow, const struct graph *g,
-                     const struct bitvec *sources, struct bitvec *cut) {
-    size_t size = graph_size(g);
+void flow_vertex_cut(const struct flow *flow, const struct bitvec *sources,
+		     struct bitvec *cut) {
+    size_t size = graph_size(flow->g);
     assert(bitvec_size(sources) >= size);
     assert(bitvec_size(cut) >= size);
     ALLOCA_BITVEC(enqueued, size * 2);
@@ -323,8 +320,8 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
 	port_t port = vcode & 1;
 	vertex v = vcode >>= 1, w;
 
-	GRAPH_NEIGHBORS_ITER(g, v, w) {
-	    if (!graph_vertex_exists(g, w))
+	GRAPH_NEIGHBORS_ITER(flow->g, v, w) {
+	    if (!graph_vertex_exists(flow->g, w))
 		continue;
 	    port_t wport = port ^ 1;
 	    vertex wcode = (w << 1) | wport;
@@ -356,9 +353,9 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
 }
 
 void flow_dump(const struct flow *flow) {
-    ALLOCA_BITVEC(done, flow->size);    
+    ALLOCA_BITVEC(done, flow->g->size);
     fprintf(stderr, "{ flow %zu:\n", flow->flow);
-    for (vertex v = 0; v < flow->size; v++) {
+    for (vertex v = 0; v < flow->g->size; v++) {
 	if (flow_is_source(flow, v)) {
 	    vertex prev = NULL_VERTEX;
 	    for (vertex w = v; w != NULL_VERTEX;
@@ -372,7 +369,7 @@ void flow_dump(const struct flow *flow) {
 	    fprintf(stderr, "\n");
 	}
     }
-    for (size_t i = 0; i < flow->size; i++)
+    for (size_t i = 0; i < flow->g->size; i++)
 	if (!bitvec_get(done, i) && flow_vertex_flow(flow, i))
 	    fprintf(stderr, " BAD dangling %d -> %d -> %d\n",
 		    (int) flow->come_from[i], (int) i, (int) flow->go_to[i]);
