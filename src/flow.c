@@ -109,11 +109,12 @@ bool flow_augment(struct flow *flow, const struct bitvec *sources,
 	vertex v = vcode >>= 1, w;
 
 	if (port == OUT) {
+	    vertex v_go_to = flow->go_to[v];
 	    GRAPH_NEIGHBORS_ITER(flow->g, v, w) {
 		if (!graph_vertex_exists(flow->g, w))
 		    continue;
 		vertex wcode = (w << 1) | IN;
-		if (seen[wcode] || w == flow->go_to[v])
+		if (seen[wcode] || w == v_go_to)
 		    continue;
 
 		predecessors[wcode] = v;
