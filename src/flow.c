@@ -293,11 +293,10 @@ vertex flow_drain_target(struct flow *flow, vertex target) {
     return v;
 }
 
-void flow_vertex_cut(const struct flow *flow, const struct bitvec *sources,
-		     struct bitvec *cut) {
+struct bitvec *flow_vertex_cut(const struct flow *flow,
+			       const struct bitvec *sources) {
     size_t size = graph_size(flow->g);
     assert(bitvec_size(sources) >= size);
-    assert(bitvec_size(cut) >= size);
     ALLOCA_BITVEC(enqueued, size * 2);
     ALLOCA_BITVEC(seen, size);
     ALLOCA_BITVEC(reached, size);
@@ -347,9 +346,11 @@ void flow_vertex_cut(const struct flow *flow, const struct bitvec *sources,
 	    }
 	}
     }
-    
+
+    struct bitvec *cut = bitvec_make(size);
     bitvec_copy(cut, seen);
     bitvec_setminus(cut, reached);
+    return cut;
 }
 
 void flow_dump(const struct flow *flow) {

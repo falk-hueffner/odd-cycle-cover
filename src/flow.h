@@ -21,8 +21,8 @@ bool flow_augment(struct flow *flow, const struct bitvec *sources,
 void flow_augment_pair(struct flow *flow, vertex source, vertex target);
 vertex flow_drain_source(struct flow *flow, vertex source);
 vertex flow_drain_target(struct flow *flow, vertex target);
-void flow_vertex_cut(const struct flow *flow, const struct bitvec *sources,
-		     struct bitvec *cut);
+struct bitvec *flow_vertex_cut(const struct flow *flow,
+			       const struct bitvec *sources);
 void flow_dump(const struct flow *flow);
 
 #endif

@@ -162,8 +162,7 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	    continue;
 
 	if (flow_flow(flow) < ysize) {
-	    cut = bitvec_make(size);
-	    flow_vertex_cut(flow, sources, cut);
+	    cut = flow_vertex_cut(flow, sources);
 	    break;
 	}
 
@@ -348,12 +347,13 @@ static struct bitvec* bipsub_make_occ(struct problem *problem,
 	else
 	    bitvec_set(occ, v);
     }
-    flow_vertex_cut(problem->flow, sources, cut);
+    cut = flow_vertex_cut(problem->flow, sources);
     BITVEC_ITER(cut, v) {
 	if (v >= problem->g->size)
 	    v = problem->occ_vertices[v - problem->g->size];
 	bitvec_set(occ, v);
     }
+    bitvec_free(cut);
     
     return occ;
 }
