@@ -197,7 +197,7 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
 	if (cut) {
 	    if (verbose)
 		fprintf(stderr, "found small cut after %llu subsets examined\n",
-			subsets_examined);
+			(unsigned long long) subsets_examined);
 	    new_occ = bitvec_make(size);
 	    bitvec_copy(new_occ, occ);
 	    bitvec_setminus(new_occ, y_origs);

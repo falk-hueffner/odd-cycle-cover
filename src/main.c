@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (stats) {
-	printf("%5d %6d %5d %10.2f\n", g->size, graph_num_edges(g), bitvec_count(occ),
+	printf("%5zd %6zd %5zd %10.2f\n", g->size, graph_num_edges(g), bitvec_count(occ),
 	       user_time());
     } else {
 	BITVEC_ITER(occ, v)
