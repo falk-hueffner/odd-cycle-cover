@@ -9,7 +9,7 @@
 struct bitvec;
 
 /* uint16_t would do, but seems to be slower in benchmarks.  */
-typedef unsigned vertex;
+typedef unsigned long vertex;
 
 struct graph {
     size_t capacity;
@@ -21,10 +21,9 @@ struct graph {
     } *vertices[];
 };
 
-#define GRAPH_NEIGHBORS_ITER(g, v, w)			\
-    for (vertex __n = 0, w;				\
-	 __n < g->vertices[v]->deg			\
-	 && (w = g->vertices[v]->neighbors[__n++], 1);)
+#define GRAPH_NEIGHBORS_ITER(g, v, w)					\
+    for (vertex *__pw = g->vertices[v]->neighbors, *__pw_end = __pw + g->vertices[v]->deg; \
+	 __pw != __pw_end && (w = *__pw, 1); __pw++)
 
 struct graph *graph_make(void);
 struct graph *graph_grow(struct graph * g, size_t size);

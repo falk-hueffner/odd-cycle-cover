@@ -15,7 +15,7 @@ size_t graph_num_vertices(const struct graph *g) {
 }
 
 size_t graph_num_edges(const struct graph *g) {
-    size_t n = 0;
+    size_t n = 0, _;
     for (size_t v = 0; v < g->size; v++)
 	if (g->vertices[v])
 	    GRAPH_NEIGHBORS_ITER(g, v, _)
@@ -112,7 +112,7 @@ bool graph_two_coloring(const struct graph *g, struct bitvec *colors) {
 	*qtail++ = v0;
 	bitvec_set(seen, v0);
 	do {
-	    vertex v = *qhead++;
+	    vertex v = *qhead++, w;
 	    bool c = bitvec_get(colors, v);
 	    GRAPH_NEIGHBORS_ITER(g, v, w) {
 		if (!bitvec_get(seen, w)) {

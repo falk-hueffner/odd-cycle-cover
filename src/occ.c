@@ -23,7 +23,8 @@ struct graph *occ_gprime(const struct graph *g, const struct bitvec *occ,
     size_t clone = 0;
     BITVEC_ITER(occ, v) {
 	origs[clone] = v;
-	
+
+	vertex w;
 	GRAPH_NEIGHBORS_ITER(g, v, w) {
 	    if (bitvec_get(occ, w) && v > w)
 		continue;
@@ -180,6 +181,6 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
 	bitvec_toggle(y_clones, clone);
     }
 done:
-    free(g_prime);
+    graph_free(g_prime);
     return new_occ;
 }

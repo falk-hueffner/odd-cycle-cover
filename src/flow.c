@@ -33,6 +33,7 @@ void flow_clear(struct flow *flow) {
 void flow_free(struct flow *flow) {
     for (unsigned i = 0; i < flow->size; ++i)
 	free(flow->edge_flow[i]);
+    free(flow->edge_flow);
     free(flow->vertex_flow);
 }
 
@@ -57,7 +58,7 @@ bool flow_augment(struct flow *flow, const struct graph *g,
     while (qhead != qtail) {
 	vertex vcode = *qhead++;
 	port_t port = vcode & 1;
-	vertex v = vcode >>= 1;
+	vertex v = vcode >>= 1, w;
 	port_t wport = port ^ 1;
 
 	GRAPH_NEIGHBORS_ITER(g, v, w) {
@@ -143,7 +144,7 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
     while (qhead != qtail) {
 	vertex vcode = *qhead++;
 	port_t port = vcode & 1;
-	vertex v = vcode >>= 1;
+	vertex v = vcode >>= 1, w;
 
 	GRAPH_NEIGHBORS_ITER(g, v, w) {
 	    port_t wport = port ^ 1;

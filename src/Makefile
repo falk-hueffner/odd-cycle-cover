@@ -1,7 +1,7 @@
 PROG	= occ
-CC	= gcc-3.4
-#CFLAGS	= -std=c99 -funroll-all-loops -O3 $(shell gcc-arch) -g -W -Wall -pipe #  -DNDEBUG
-CFLAGS	= -std=c99 -O2 -march=k8 -g -W -Wall -pipe -DNDEBUG
+CC	= gcc
+# gcc-arch can be obtained from http://people.debian.org/~falk/gcc-arch
+CFLAGS	= -std=c99 -O3 $(shell CC=$(CC) gcc-arch) -g -W -Wall -pipe -DNDEBUG
 
 LDPATH	=
 LIBS	=
