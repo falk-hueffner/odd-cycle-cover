@@ -86,15 +86,16 @@ int main(int argc, char *argv[]) {
 	    }
 	    bitvec_set(occ, i);
 	    if (verbose) {
-		fprintf(stderr, "size = %zd ", graph_size(g2));
+		fprintf(stderr, "size = %zd ", graph_num_vertices(g2));
 		fprintf(stderr, "occ = "); bitvec_dump(occ); putc('\n', stderr);
 	    }
 	    struct bitvec *occ_new = occ_shrink(g2, occ, enum_bipartite, use_gray, true);
-	    graph_free(g2);
 	    if (occ_new) {
 		free(occ);
 		occ = occ_new;
+		assert(occ_is_occ(g2, occ));
 	    }
+	    graph_free(g2);
 	}
     }
     
