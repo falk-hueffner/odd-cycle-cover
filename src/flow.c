@@ -9,13 +9,12 @@ typedef bool port_t;
 #define OUT true
 #define PORT(port) (port == IN ? "in" : "out")
 
-struct flow flow_make(size_t size, size_t ysize) {
+struct flow flow_make(size_t size) {
     struct flow flow = (struct flow) {
 	.edge_flow   = malloc(size * sizeof (bool *)),
 	.vertex_flow = calloc(size, sizeof (bool)),
 	.flow        = 0,
 	.size        = size,
-	.ysize       = ysize,
     };
 
     for (size_t i = 0; i < size; ++i)
@@ -39,6 +38,7 @@ void flow_free(struct flow *flow) {
 }
 
 bool flow_augment(struct flow *flow, const struct graph *g,
+		  size_t num_sources,
                   const struct bitvec *sources, const vertex *source_vertices,
 		  const struct bitvec *targets) {
     size_t size = graph_size(g);
@@ -49,7 +49,7 @@ bool flow_augment(struct flow *flow, const struct graph *g,
     memset(seen, 0, sizeof seen);
     vertex queue[size * 2];
     vertex *qhead = queue, *qtail = queue;
-    for (size_t i = 0; i < flow->ysize; i++) {
+    for (size_t i = 0; i < num_sources; i++) {
 	vertex v = source_vertices[i];
 	if (!vertex_flow[v]) {
 	    vertex vcode = (v << 1) | OUT;
@@ -220,6 +220,8 @@ found:
 void flow_vertex_cut(const struct flow *flow, const struct graph *g,
                      const struct bitvec *sources, struct bitvec *cut) {
     size_t size = graph_size(g);
+    assert(bitvec_size(sources) >= size);
+    assert(bitvec_size(cut) >= size);
     ALLOCA_BITVEC(enqueued, size * 2);
     ALLOCA_BITVEC(seen, size);
     ALLOCA_BITVEC(reached, size);

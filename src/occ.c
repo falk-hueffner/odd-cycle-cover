@@ -156,18 +156,15 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	y1_xor_y2[i] = y1[i] ^ y2[i];
     }
 
-    struct flow flow = flow_make(g->size, ysize);
+    struct flow flow = flow_make(g->size);
     uint64_t code = 0, code_end = 1ULL << (ysize - 1);
     struct bitvec *cut = NULL;
     while (true) {
-	if (!use_gray) {
+	if (!use_gray) 
 	    flow_clear(&flow);
-	    while (flow.flow < ysize && flow_augment(&flow, g, sources, source_vertices, targets))
-		continue;
-	} else {
-	    while (flow.flow < ysize && flow_augment(&flow, g, sources, source_vertices, targets))
-		continue;
-	}
+	while (flow.flow < ysize
+	       && flow_augment(&flow, g, ysize, sources, source_vertices, targets))
+	    continue;
 
 	if (flow.flow < ysize) {
 	    cut = bitvec_make(size);
