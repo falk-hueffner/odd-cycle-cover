@@ -1,7 +1,10 @@
-PROG	= occ
 CC	= gcc-3.4
 # gcc-arch can be obtained from http://people.debian.org/~falk/gcc-arch
 CFLAGS	= -std=c99 -O3 $(shell CC=$(CC) gcc-arch) -g -W -Wall -Werror -pipe # -DNDEBUG
+# disable internal consistency checking for moderate (10-30%) speedup
+CFLAGS  += -DNDEBUG
+
+PROG	= occ
 
 LDPATH	=
 LIBS	=

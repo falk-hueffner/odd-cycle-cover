@@ -37,6 +37,7 @@ bool downwards	= false;
 bool enum_2col  = false;
 bool use_gray   = false;
 bool stats_only = false;
+unsigned long long augmentations = 0;
 
 struct bitvec *find_occ(const struct graph *g) {
     struct bitvec *occ = NULL;
@@ -162,8 +163,8 @@ int main(int argc, char *argv[]) {
     }
     
     if (stats_only)
-	printf("%5zd %6zd %5zd %10.2f\n",
-	       g->size, graph_num_edges(g), occ_size, user_time());
+	printf("%5zd %6zd %5zd %10.2f %16llu\n",
+	       g->size, graph_num_edges(g), occ_size, user_time(), augmentations);
 
     return 0;
 }

@@ -8,10 +8,8 @@
 struct bitvec;
 
 bool occ_is_occ(const struct graph *g, const struct bitvec *occ);
-struct graph *occ_gprime(const struct graph *g, const struct bitvec *occ,
-			 vertex *origs);
 struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
-			  bool enum_bipartite, bool use_gray,
+			  bool enum_occ_twocolorings, bool use_graycode,
 			  bool last_not_in_occ);
 struct bitvec *occ_heuristic(const struct graph *g);
 
