@@ -162,7 +162,6 @@ try_red:
 
 struct bitvec *occ_shrink_enum2col(struct occ_problem *problem) {
     // Construct the induced subgrapg G[occ].
-
     struct graph *occ_g = graph_make(problem->occ_size);
     for (size_t i = 0; i < problem->occ_size; i++) {
 	vertex v = problem->occ_vertices[i], w;
@@ -174,18 +173,32 @@ struct bitvec *occ_shrink_enum2col(struct occ_problem *problem) {
 	}
     }
 
-    for (size_t i = 0; i < problem->occ_size; i++) {
+    for (size_t i = 0; i < problem->occ_size - (problem->last_not_in_occ ? 1 : 0); i++) {
 	vertex v = problem->occ_vertices[i];
 	graph_vertex_disable(problem->h, v);
 	graph_vertex_disable(problem->h, problem->first_clone + i);
     }
-    
+
     enum color colors[problem->occ_size];
     memset(colors, 0, sizeof colors);
     
     vertex queue[problem->occ_size];
     ALLOCA_BITVEC(in_queue, problem->occ_size);
     vertex *qtail = queue;
+
+    if (problem->last_not_in_occ) {
+	size_t last = problem->occ_size - 1;
+	vertex last_v = problem->occ_vertices[last], j;
+	colors[last] = WHITE;
+	flow_augment_pair(problem->flow, last_v, problem->clones[last_v]);
+	augmentations++;
+	if (graph_vertex_exists(occ_g, last)) {
+	    GRAPH_NEIGHBORS_ITER(occ_g, last, j) {
+		*qtail++ = j;
+		bitvec_set(in_queue, j);
+	    }
+	}
+    }
 
     struct bitvec *new_occ = branch(problem, occ_g, colors,
 				    in_queue, queue, qtail);
