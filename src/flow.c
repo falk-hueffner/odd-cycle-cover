@@ -85,8 +85,7 @@ UNUSED static void verify_flow(const struct flow *flow,
 }
 
 bool flow_augment(struct flow *flow, const struct graph *g,
-		  size_t num_sources,
-                  const struct bitvec *sources, const vertex *source_vertices,
+                  const struct bitvec *sources,
 		  const struct bitvec *targets) {
     size_t size = graph_size(g);
     vertex predecessors[size * 2];
@@ -94,8 +93,7 @@ bool flow_augment(struct flow *flow, const struct graph *g,
     memset(seen, 0, sizeof seen);
     vertex queue[size * 2];
     vertex *qhead = queue, *qtail = queue;
-    for (size_t i = 0; i < num_sources; i++) {
-	vertex v = source_vertices[i];
+    BITVEC_ITER(sources, v) {
 	if (flow->go_to[v] == NULL_VERTEX) {
 	    vertex vcode = (v << 1) | OUT;
 	    predecessors[vcode] = v;

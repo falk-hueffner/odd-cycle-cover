@@ -142,8 +142,6 @@ struct bitvec *small_cut_partition(const struct graph *g,
     bitvec_copy(targets, yv2);
     vertex y1[ysize];
     vertex y2[ysize];
-    vertex source_vertices[ysize];
-    vertex y1_xor_y2[ysize];
     size_t i = 0;
     BITVEC_ITER(yv1, v)
 	y1[i++] = v;
@@ -152,10 +150,6 @@ struct bitvec *small_cut_partition(const struct graph *g,
     BITVEC_ITER(yv2, v)
 	y2[i++] = v;
     assert (i = ysize);
-    for (size_t i = 0; i < ysize; i++) {
-	source_vertices[i] = y1[i];
-	y1_xor_y2[i] = y1[i] ^ y2[i];
-    }
 
     struct flow *flow = flow_make(g->size);
     uint64_t code = 0, code_end = 1ULL << (ysize - 1);
@@ -164,7 +158,7 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	if (!use_gray) 
 	    flow_clear(flow);
 	while (flow_flow(flow) < ysize
-	       && flow_augment(flow, g, ysize, sources, source_vertices, targets))
+	       && flow_augment(flow, g, sources, targets))
 	    continue;
 
 	if (flow_flow(flow) < ysize) {
@@ -200,7 +194,6 @@ struct bitvec *small_cut_partition(const struct graph *g,
 	bitvec_toggle(targets, y1[x]);
 	bitvec_toggle(sources, y2[x]);
 	bitvec_toggle(targets, y2[x]);
-	source_vertices[x] ^= y1_xor_y2[x];
     }
 
     flow_free(flow);
