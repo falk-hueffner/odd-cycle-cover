@@ -54,10 +54,6 @@ int main(int argc, char *argv[]) {
     ALLOCA_BITVEC(sub, g->size);
 
     for (size_t i = 0; i < g->size; i++) {
-	if (verbose) {
-	    fprintf(stderr, "size = %zd ", i+1);
-	    fprintf(stderr, "occ = "); bitvec_dump(occ); putc('\n', stderr);
-	}
 	bitvec_set(sub, i);
 	struct graph *g2 = graph_subgraph(g, sub);
 	if (occ_is_occ(g2, occ)) {
@@ -65,6 +61,10 @@ int main(int argc, char *argv[]) {
 	    continue;
 	}
 	bitvec_set(occ, i);
+	if (verbose) {
+	    fprintf(stderr, "size = %zd ", i+1);
+	    fprintf(stderr, "occ = "); bitvec_dump(occ); putc('\n', stderr);
+	}
 	struct bitvec *occ_new = occ_shrink(g2, occ, enum_bipartite, use_gray, true);
 	graph_free(g2);
 	if (occ_new) {

@@ -155,6 +155,8 @@ struct problem {
 static struct bitvec *build_occ(const struct problem *problem,
 				const struct bitvec *replaced,
 				const struct bitvec *cut) {
+    if (verbose)
+	fprintf(stderr, "found small cut; ");
     struct bitvec *new_occ = bitvec_make(problem->g->size);
     bitvec_copy(new_occ, problem->occ);
     bitvec_setminus(new_occ, replaced);
@@ -196,18 +198,23 @@ static struct bitvec *enum_occ_subsets(struct problem *problem) {
     uint64_t code = 0;
     uint64_t code_end = 1ULL << (problem->last_not_in_occ ? occ_size - 1 : occ_size);
     while (true) {
+#if 1
+	struct graph *t = graph_subgraph(problem->g, y_origs);
+	if (!graph_is_bipartite(t)) {
+	    graph_free(t);
+	    goto next;
+	}
+	graph_free(t);
+#endif
 	problem->subsets_examined++;
 	struct graph *g2 = graph_subgraph(problem->g_prime, sub);
 	struct bitvec *cut = small_cut_partition(g2, y_origs, y_clones, problem->use_gray);
 	graph_free(g2);
 
-	if (cut) {
-	    if (verbose)
-		fprintf(stderr, "found small cut after %llu subsets examined\n",
-			(unsigned long long) problem->subsets_examined);
+	if (cut)
 	    return build_occ(problem, y_origs, cut);
-	}
 
+    next:;
 	size_t x = gray_change(code);
 	if (++code >= code_end)
 	    break;
@@ -256,6 +263,8 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
 		    bitvec_set(g2sub, i);
 	    }
 	    bitvec_join(g2sub, clones);
+	    problem->subsets_examined++;
+
 	    struct graph *g2 = graph_subgraph(problem->g_prime, g2sub);
 	    struct bitvec *cut = small_cut_partition(g2, subgraph, clones,
 						     problem->use_gray);
@@ -329,9 +338,20 @@ static struct bitvec *enum_occ_subsets_bipartite(struct problem *problem) {
     ALLOCA_BITVEC(subgraph, problem->g_prime->size);
     ALLOCA_BITVEC(in_queue, occ_sub->size);
     vertex queue[occ_sub->size];
+    vertex *qtail = queue;
+
+    if (problem->last_not_in_occ) {
+	vertex last = problem->occ_vertices[problem->occ_size - 1], w;
+	colors[last] = WHITE;
+	GRAPH_NEIGHBORS_ITER(occ_sub, last, w) {
+	    *qtail++ = w;
+	    bitvec_set(in_queue, w);
+	}
+	bitvec_set(subgraph, last);
+    }
 
     struct bitvec *new_occ = bipsub_branch(problem, occ_sub, colors, subgraph,
-					   in_queue, queue, queue);
+					   in_queue, queue, qtail);
 
     graph_free(occ_sub);
     return new_occ;
@@ -365,6 +385,8 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
     for (size_t i = 0; i < problem.occ_size; ++i) {
 	if (   !graph_vertex_exists(problem.g_prime, problem.occ_vertices[i])
 	    || !graph_vertex_exists(problem.g_prime, problem.g->size + i)) {
+	    if (verbose)
+		fprintf(stderr, "omitting redundant %d\n", (int) problem.occ_vertices[i]);
 	    new_occ = bitvec_make(problem.g->size);
 	    bitvec_copy(new_occ, occ);
 	    bitvec_unset(new_occ, problem.occ_vertices[i]);
@@ -377,6 +399,9 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
     } else {
 	new_occ = enum_occ_subsets(&problem);
     }
+    if (verbose)
+	fprintf(stderr, "%llu subsets examined\n",
+		(unsigned long long) problem.subsets_examined);
 
 done:
     graph_free(problem.g_prime);
