@@ -120,11 +120,13 @@ let main n d c k p =
 ;;
 
 let () =
-  Random.self_init ();
-  if Array.length Sys.argv <> 6
-  then (Printf.fprintf stderr
-	  "usage: mfr2 n d c k p\n";
-	exit 1);
+  (match Array.length Sys.argv with
+       6 -> Random.self_init ()
+     | 7 -> (let seed = int_of_string Sys.argv.(6) in
+	       Random.init seed;
+	       Printf.printf "# random seed = %d\n" seed)
+     | _ -> (Printf.fprintf stderr "usage: %s n d c k p [random-seed]\n"
+	       Sys.argv.(0); exit 1));
   let n = int_of_string Sys.argv.(1) in
   let d = float_of_string Sys.argv.(2) in
   let c = int_of_string Sys.argv.(3) in
