@@ -11,11 +11,18 @@ val empty : t
 val size : t -> int
 (** Returns the highest number of a vertex that was connected, plus one.  *)
 
+val num_edges : t -> int
+(** Returns the number of edges in the graph.  *)
+
 val grow : t -> int -> t
 (** [grow g t] makes sure [size g] will return at least [t].  *)
 
 val connect : t -> int -> int -> t
-(** [connect g v w] connects vertices [v] and [w] in [g]. O(n^2)  *)
+(** [connect g v w] connects vertices [v] and [w] in [g]. Takes O(n) time.  *)
+
+val disconnect : t -> int -> int -> t
+(** [disconnect g v w] disconnects vertices [v] and [w] in [g].
+    Takes O(n) time.  *) 
 
 val deg : t -> int -> int
 (** [deg g v] returns the number of neighbors of [v] in [g].  *)

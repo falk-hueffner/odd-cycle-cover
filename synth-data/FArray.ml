@@ -38,3 +38,5 @@ let filter f a =
   let l = fold_left (fun l x -> if f x then x :: l else l) [] a in
     of_list (List.rev l)
 ;;
+
+let remove a x = filter ((<>) x) a;;

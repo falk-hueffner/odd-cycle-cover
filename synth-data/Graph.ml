@@ -20,6 +20,15 @@ let connect g u v =
       g.(v) <- Array.append g.(v) u
 ;;
 
+let disconnect g u v =
+  assert (u <> v);
+  if not (is_connected g u v)
+  then g
+  else
+    let g = g.(u) <- Array.remove g.(u) v in
+      g.(v) <- Array.remove g.(v) u
+;;
+
 let iter_neighbors f g v = Array.iter f g.(v);;
 let fold_neighbors f x g v = Array.fold_left f x g.(v);;
 let iter_neighbors' f g v = f v; Array.iter f g.(v);;
@@ -47,6 +56,8 @@ let fold_edges f accu g =
   in
     loop 0 accu
 ;;
+
+let num_edges g = fold_edges (fun i _ _ -> succ i) 0 g;;
 
 let delete_vertex g v =  
   let g = g.(v) <- Array.empty in
