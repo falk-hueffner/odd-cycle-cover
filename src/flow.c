@@ -181,7 +181,7 @@ found:;
     return true;    
 }
 
-void flow_augment_pair(struct flow *flow, vertex source, vertex target) {
+bool flow_augment_pair(struct flow *flow, vertex source, vertex target) {
     size_t size = graph_size(flow->g);
     vertex predecessors[size * 2];
     bool seen[size * 2];
@@ -240,7 +240,7 @@ void flow_augment_pair(struct flow *flow, vertex source, vertex target) {
 	    }
 	}
     }
-    return;
+    return false;
 
 found:;    
     port_t t_port = OUT;
@@ -267,6 +267,7 @@ found:;
 	t = s;
 	t_port = s_port;
     }
+    return true;
 }
 
 vertex flow_drain_source(struct flow *flow, vertex source) {
