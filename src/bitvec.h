@@ -86,8 +86,10 @@ size_t bitvec_count(const struct bitvec *v);
 size_t bitvec_find(const struct bitvec *v, size_t n);
 
 void bitvec_clear(struct bitvec *v);
+void bitvec_fill(struct bitvec *v);
 void bitvec_invert(struct bitvec *v);
 void bitvec_setminus(struct bitvec *d, const struct bitvec *s);
+void bitvec_join(struct bitvec *d, const struct bitvec *s);
 void bitvec_output(const struct bitvec *v, FILE *stream);
 static inline void bitvec_dump(const struct bitvec *v) {
     bitvec_output(v, stderr);

@@ -33,14 +33,18 @@ int main(int argc, char *argv[]) {
     const char **vertices;
     struct graph *g = graph_read(stdin, &vertices);
 
-    bool use_gray = false;
-    bool stats    = false;
+    void enum_bipartite_subgraphs(const struct graph *g);
+
+    bool use_gray       = false;
+    bool enum_bipartite = false;
+    bool stats          = false;
     int c;
-    while ((c = getopt(argc, argv, "vgsh")) != -1) {
+    while ((c = getopt(argc, argv, "vgsbh")) != -1) {
 	switch (c) {
-	case 'v': verbose  = true; break;
-	case 'g': use_gray = true; break;
-	case 's': stats    = true; break;
+	case 'v': verbose        = true; break;
+	case 'g': use_gray       = true; break;
+	case 'b': enum_bipartite = true; break;
+	case 's': stats          = true; break;
 	case 'h': usage(stdout); exit(0); break;
 	default:  usage(stderr); exit(1); break;
 	}
@@ -61,7 +65,7 @@ int main(int argc, char *argv[]) {
 	    continue;
 	}
 	bitvec_set(occ, i);
-	struct bitvec *occ_new = occ_shrink(g2, occ, true, use_gray);
+	struct bitvec *occ_new = occ_shrink(g2, occ, enum_bipartite, use_gray, true);
 	graph_free(g2);
 	if (occ_new) {
 	    free(occ);

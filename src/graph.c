@@ -75,7 +75,7 @@ void graph_connect(struct graph *g, vertex v, vertex w) {
 struct graph *graph_subgraph(const struct graph *g, const struct bitvec *s) {
     size_t size = g->size;
     struct graph *sub = malloc(sizeof (struct graph) + sizeof (void *) * size);
-    sub->capacity =sub->size = size;
+    sub->capacity = sub->size = size;
 
     for (size_t v = 0; v < g->size; v++) {
 	size_t new_deg = 0;

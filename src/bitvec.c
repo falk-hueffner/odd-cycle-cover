@@ -53,6 +53,12 @@ void bitvec_setminus(struct bitvec *d, const struct bitvec *s) {
 	d->data[w] &= ~s->data[w];
 }
 
+void bitvec_join(struct bitvec *d, const struct bitvec *s) {
+    size_t words = min(bitvec_words(s->num_bits), bitvec_words(d->num_bits));
+    for (size_t w = 0; w < words; ++w)
+	d->data[w] |= s->data[w];
+}
+
 void bitvec_output(const struct bitvec *v, FILE *stream) {
     fprintf(stream, "[%zu/%lu:", bitvec_count(v), v->num_bits);
     for (size_t i = bitvec_find(v, 0); i != BITVEC_NOT_FOUND;
@@ -63,6 +69,14 @@ void bitvec_output(const struct bitvec *v, FILE *stream) {
 
 void bitvec_clear(struct bitvec *v) {
     memset(v->data, 0, bitvec_bytes(v->num_bits));
+}
+
+void bitvec_fill(struct bitvec *v) {
+    memset(v->data, (unsigned char) -1, bitvec_bytes(v->num_bits));
+    size_t words = bitvec_words(v->num_bits);
+    unsigned long padbits = BITS_PER_WORD * words - v->num_bits;
+    if (padbits)
+	v->data[words - 1] &= ~0UL >> padbits;
 }
 
 void bitvec_invert(struct bitvec *v) {
