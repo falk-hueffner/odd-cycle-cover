@@ -8,7 +8,7 @@
 struct bitvec;
 struct flow;
 
-struct problem {
+struct occ_problem {
     const struct graph *g;	// The input graph
     struct graph *h;		// G' as described by Reed et al.
     const struct bitvec *occ;
@@ -28,7 +28,7 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
 			  bool last_not_in_occ);
 struct bitvec *occ_heuristic(const struct graph *g);
 
-struct bitvec *occ_shrink_gray(struct problem *problem);
+struct bitvec *occ_shrink_gray(struct occ_problem *problem);
 
 
 #endif // OCC_H

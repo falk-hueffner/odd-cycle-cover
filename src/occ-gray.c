@@ -13,7 +13,7 @@ extern unsigned long long augmentations;
 
 enum code { SOURCE, DISABLED, TARGET };
 
-static inline void update_vertex(struct problem *problem, size_t i, int g[],
+static inline void update_vertex(struct occ_problem *problem, size_t i, int g[],
 				 enum code new_role) {
     enum code old_role = g[i];
     vertex v1 = problem->occ_vertices[i], v2 = problem->first_clone + i;
@@ -87,7 +87,7 @@ uint64_t ipow(uint64_t a, uint64_t b) {
 
   * can be ommitted for symmetry
   # can be ommitted if we know last is in Y  */
-struct bitvec *occ_shrink_gray(struct problem *problem) {
+struct bitvec *occ_shrink_gray(struct occ_problem *problem) {
     int u[problem->occ_size];	// +1 or -1, current Gray change direction
     int g[problem->occ_size];
     for (size_t i = 0; i < problem->occ_size; i++) {
