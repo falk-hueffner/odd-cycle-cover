@@ -1,17 +1,67 @@
 #! /usr/bin/env python
 
-import string, sys, os, re
+import string, sys, os, re, getopt
 
-def main():    
+def usage(fd):
+    print >> fd, "Usage: occ-lp [-c]"
+    print >> fd, "Calculate minimum odd cycle cover by integer linear programming."
+    print >> fd, "  -c   Print only the size of the odd cycle cover"
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hc", ["--help"])
+    except getopt.GetoptError:
+        # print help information and exit:
+        usage(sys.stderr)
+        sys.exit(2)
+
+    count_only = 0
+    for o, a in opts:
+        if o in "-h", "--help":
+            usage(sys.stdout)
+            sys.exit(0)
+        if o in "-c":
+            count_only = 1
+
     edges = []
-    for line in sys.stdin.readlines():
+    vertex_names = {}
+    vertex_numbers = {}
+    next_vertex = 0
+    while 1:
+        line = sys.stdin.readline()
+        if not line:
+            break
+        line = string.strip(line)
+        if not line or line[0] == '#':
+            if line == "# Graph Name":
+                while string.strip(sys.stdin.readline()) != "# Edges":
+                    pass
+            continue
         a, b = string.split(line)
-        edges.append((int(a), int(b)))
+        
+        if a in vertex_numbers:
+            i = vertex_numbers[a]
+        else:
+            i = next_vertex
+            next_vertex += 1
+            vertex_numbers[a] = i
+            vertex_names[i] = a
+        if b in vertex_numbers:
+            j = vertex_numbers[b]
+        else:
+            j = next_vertex
+            next_vertex += 1
+            vertex_numbers[b] = j
+            vertex_names[j] = b
+            
+        edges.append((i, j))
 
-    n = max([max(a, b) for a, b in edges]) + 1
+    n = len(vertex_numbers)
     m = len(edges)
 
     glpsol_in, glpsol_out = os.popen2("glpsol --math /dev/stdin --display /dev/null --output /dev/stdout")
+
+    #glpsol_in = sys.stdout
 
     print >> glpsol_in, \
 """param n > 0 integer;
@@ -51,10 +101,14 @@ param m := %d;
     #     1 occ[0]       *              1             0             1
     #     2 occ[1]       *              0             0             1
     occpat = re.compile('.*occ\[(\d+)\]\s+\*\s+(\d+)')
+    occ_size = 0
     for line in glpsol_out.readlines():
         m = occpat.match(line)
         if m:
             if int(m.groups()[1]):
-                print m.groups()[0]
-
+                if not count_only:
+                    print vertex_names[int(m.groups()[0])]
+                occ_size += 1
+    if count_only:
+        print occ_size
 main()
