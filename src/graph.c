@@ -82,6 +82,8 @@ struct graph *graph_make(size_t size) {
     struct graph *g = calloc(sizeof (struct graph)
 			     + size * sizeof *g->vertices, 1);
     g->capacity = g->size = size;
+    for (size_t i = 0; i < size; ++i)
+	g->vertices[i] = NULL_NEIGHBORS;
     return g;
 }
 

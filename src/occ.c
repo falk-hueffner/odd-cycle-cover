@@ -28,7 +28,7 @@ static struct graph *occ_construct_h(struct occ_problem *problem) {
     size_t clone = 0;
     BITVEC_ITER(problem->occ, v) {
 	problem->occ_vertices[clone] = v;
-	problem->clones[v] = clone;
+	problem->clones[v] = problem->first_clone + clone;
 
 	vertex w;
 	GRAPH_NEIGHBORS_ITER(problem->g, v, w) {
@@ -37,7 +37,7 @@ static struct graph *occ_construct_h(struct occ_problem *problem) {
 	    if (bitvec_get(coloring, w))
 		graph_connect(problem->h, v, w);
 	    else
-		graph_connect(problem->h, size + clone, w);
+		graph_connect(problem->h, problem->clones[v], w);
 	}
 	clone++;
     }
@@ -98,7 +98,7 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
     problem->flow = flow_make(problem->h);
 
     if (enum2col)
-	abort();//new_occ = occ_shrink_enum_2col(problem);
+	new_occ = occ_shrink_enum2col(problem);
     else
         new_occ = occ_shrink_gray(problem);
 

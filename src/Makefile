@@ -18,6 +18,7 @@ SOURCES	= \
 	hash-table.c	\
 	main.c		\
 	occ.c		\
+	occ-enum2col.c	\
 	occ-gray.c	\
 	occ-heuristic.c
 
