@@ -221,9 +221,10 @@ bool occ_is_occ(const struct graph *g, const struct bitvec *occ) {
 struct problem {
     const struct graph *g;	// The input graph
     struct graph *g_prime;	// G' as described by Reed et al.
+    size_t occ_size;		// Size of occ_vertices
     const struct bitvec *occ;	// The known OCC
     const vertex *occ_vertices;	// Array with the vertices in OCC
-    size_t occ_size;		// Size of occ_vertices
+    vertex *clones;		// Array for vertex->clone translation
     bool last_not_in_occ;	// Assume occ_vertices[occ_size-1] is not in a smaller OCC
     bool use_gray;		// Use gray code when enumerating valid partitions
     uint64_t subsets_examined;	// Statistics counter
@@ -334,9 +335,9 @@ static struct bitvec* bipsub_findcut(struct problem *problem,
     bitvec_join(g2sub, clones);
     problem->subsets_examined++;
 
-    struct graph *g2 = graph_subgraph(problem->g_prime, g2sub);
     struct bitvec *cut = NULL;
 #if 1
+    struct graph *g2 = problem->g_prime;
     struct flow flow = flow_make(g2->size);
     ALLOCA_BITVEC(sources, g2->size);
     ALLOCA_BITVEC(targets, g2->size);
@@ -367,9 +368,10 @@ static struct bitvec* bipsub_findcut(struct problem *problem,
     }
     flow_free(&flow);
 #else
+    struct graph *g2 = graph_subgraph(problem->g_prime, g2sub);
     cut = small_cut_partition(g2, subgraph, clones, problem->use_gray);
-#endif
     graph_free(g2);
+#endif
 
     if (cut)
 	return build_occ(problem, subgraph, cut);
@@ -449,8 +451,15 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
 
 try_red:
     colors[v] = RED;
+    vertex v2 = problem->clones[v];
+    struct vertex *v_bak = problem->g_prime->vertices[v];
+    struct vertex *v2_bak = problem->g_prime->vertices[v2];
+    problem->g_prime->vertices[v] = NULL;
+    problem->g_prime->vertices[v2] = NULL;
     new_occ = bipsub_branch(problem, g, colors, subgraph,
 			    in_queue, qhead, qtail);
+    problem->g_prime->vertices[v] = v_bak;
+    problem->g_prime->vertices[v2] = v2_bak;
     if (new_occ)
 	return new_occ;
     colors[v] = GREY;
@@ -497,8 +506,9 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
 
     struct problem problem = {
 	.g = g,
-	.occ = occ,
 	.occ_size = bitvec_count(occ),
+	.occ = occ,
+	.clones = calloc(g->size, sizeof *problem.clones),
 	.last_not_in_occ = last_not_in_occ,
 	.use_gray = use_gray,
 	.subsets_examined = 0,
@@ -523,6 +533,7 @@ struct bitvec *occ_shrink(const struct graph *g, const struct bitvec *occ,
 	    bitvec_unset(new_occ, problem.occ_vertices[i]);
 	    goto done;
 	}
+	problem.clones[problem.occ_vertices[i]] = problem.g->size + i;
     }
 
     if (enum_bipartite) {

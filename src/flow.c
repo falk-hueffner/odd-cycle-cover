@@ -89,6 +89,8 @@ bool flow_augment(struct flow *flow, const struct graph *g,
 
 	if (port == OUT) {
 	    GRAPH_NEIGHBORS_ITER(g, v, w) {
+		if (!graph_vertex_exists(g, w))
+		    continue;
 		vertex wcode = (w << 1) | IN;
 		if (seen[wcode] || w == flow->go_to[v])
 		    continue;
@@ -210,6 +212,8 @@ void flow_vertex_cut(const struct flow *flow, const struct graph *g,
 	vertex v = vcode >>= 1, w;
 
 	GRAPH_NEIGHBORS_ITER(g, v, w) {
+	    if (!graph_vertex_exists(g, w))
+		continue;
 	    port_t wport = port ^ 1;
 	    vertex wcode = (w << 1) | wport;
 	    if (bitvec_get(enqueued, wcode))
