@@ -160,6 +160,94 @@ found:;
     return true;    
 }
 
+void flow_augment_pair(struct flow *flow, const struct graph *g,
+		       vertex source, vertex target) {
+    size_t size = graph_size(g);
+    vertex predecessors[size * 2];
+    bool seen[size * 2];
+    memset(seen, 0, sizeof seen);
+    vertex queue[size * 2];
+    vertex *qhead = queue, *qtail = queue;
+    assert(flow->go_to[source] == NULL_VERTEX);
+    vertex sourcecode = (source << 1) | OUT;
+    predecessors[sourcecode] = source;
+    *qtail++ = sourcecode;
+    seen[sourcecode] = true;
+
+    while (qhead != qtail) {
+	vertex vcode = *qhead++;
+	port_t port = vcode & 1;
+	vertex v = vcode >>= 1, w;
+
+	if (port == OUT) {
+	    GRAPH_NEIGHBORS_ITER(g, v, w) {
+		if (!graph_vertex_exists(g, w))
+		    continue;
+		vertex wcode = (w << 1) | IN;
+		if (seen[wcode] || w == flow->go_to[v])
+		    continue;
+
+		predecessors[wcode] = v;
+		*qtail++ = wcode;
+		seen[wcode] = true;
+		    
+		vertex w2code = wcode ^ 1;
+		if (!seen[w2code] && !flow_vertex_flow(flow, w)) {
+		    predecessors[w2code] = w;
+		    if (w == target)
+			goto found;
+		    *qtail++ = w2code;
+		    seen[w2code] = true;
+		}
+	    }
+	} else {
+	    w = flow->come_from[v];
+	    if (w != NULL_VERTEX) {
+		vertex wcode = (w << 1) | OUT;
+		if (!seen[wcode]) {
+		    predecessors[wcode] = v;
+		    *qtail++ = wcode;
+		    seen[wcode] = true;
+		    
+		    vertex w2code = wcode ^ 1;
+		    if (!seen[w2code] && flow_vertex_flow(flow, w)) {
+			predecessors[w2code] = w;
+			*qtail++ = w2code;
+			seen[w2code] = true;
+		    }
+		}
+	    }
+	}
+    }
+    return;
+
+found:;    
+    port_t t_port = OUT;
+    vertex t = target;
+    while (1) {
+	vertex s = predecessors[(t << 1) | t_port];
+	port_t s_port = t_port ^ 1;
+
+	if (s == t) {
+	    if (s_port == OUT) {
+		flow->go_to[s] = NULL_VERTEX;
+		flow->come_from[s] = NULL_VERTEX;
+	    }
+	} else {
+	    if (s_port == OUT) {
+		flow->come_from[t] = s;
+		flow->go_to[s] = t;
+	    }
+	}
+	if (s == source && s_port == IN) {
+	    flow->flow++;
+	    break;
+	}
+	t = s;
+	t_port = s_port;
+    }
+}
+
 vertex flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
 			 vertex source) {
     vertex v = source;

@@ -19,10 +19,18 @@ void flow_free(struct flow *flow);
 static inline bool flow_vertex_flow(const struct flow *flow, vertex v) {
     return flow->go_to[v] != NULL_VERTEX || flow->come_from[v] != NULL_VERTEX;
 }
+static inline bool flow_is_source(const struct flow *flow, vertex v) {
+    return flow->go_to[v] != NULL_VERTEX && flow->come_from[v] == NULL_VERTEX;
+}
+static inline bool flow_is_target(const struct flow *flow, vertex v) {
+    return flow->go_to[v] == NULL_VERTEX && flow->come_from[v] != NULL_VERTEX;
+}
 bool flow_augment(struct flow *flow, const struct graph *g,
 		  size_t num_sources,
                   const struct bitvec *sources, const vertex *source_vertices,
 		  const struct bitvec *targets);
+void flow_augment_pair(struct flow *flow, const struct graph *g,
+		       vertex source, vertex target);
 vertex flow_drain_source(struct flow *flow, const struct graph *g,
 			 vertex source);
 vertex flow_drain_target(struct flow *flow, const struct graph *g,
