@@ -40,6 +40,8 @@ void flow_free(struct flow *flow) {
 bool flow_augment(struct flow *flow, const struct graph *g,
                   const struct bitvec *sources, const struct bitvec *targets) {
     size_t size = graph_size(g);
+    bool **edge_flow = flow->edge_flow;
+    bool *vertex_flow = flow->vertex_flow;
     vertex predecessors[size * 2];
     bool seen[size * 2];
     memset(seen, 0, sizeof seen);
@@ -47,7 +49,7 @@ bool flow_augment(struct flow *flow, const struct graph *g,
     vertex *qhead = queue, *qtail = queue;
     for (size_t v = bitvec_find(sources, 0); v != BITVEC_NOT_FOUND;
 	 v = bitvec_find(sources, v + 1)) {
-	if (!flow->vertex_flow[v]) {
+	if (!vertex_flow[v]) {
 	    vertex vcode = (v << 1) | OUT;
 	    predecessors[vcode] = v;
 	    *qtail++ = vcode;
@@ -61,11 +63,11 @@ bool flow_augment(struct flow *flow, const struct graph *g,
 	port_t port = vcode & 1;
 	vertex v = vcode >>= 1, w;
 	port_t wport = port ^ 1;
+	bool *edge_flow_v = edge_flow[v];
 
 	GRAPH_NEIGHBORS_ITER(g, v, w) {
 	    vertex wcode = (w << 1) | wport;
-	    if ((port == OUT ? !flow->edge_flow[v][w]
-			     :  flow->edge_flow[w][v])
+	    if ((port == OUT ? !edge_flow_v[w] : edge_flow[w][v])
 		&& !seen[wcode]) {
 		predecessors[wcode] = v;
 
@@ -74,7 +76,7 @@ bool flow_augment(struct flow *flow, const struct graph *g,
 
 		vertex w2code = wcode ^ 1;
 		if (!seen[w2code]
-		    && flow->vertex_flow[w] == (port == IN)) {
+		    && vertex_flow[w] == (port == IN)) {
 		    predecessors[w2code] = w;
 		    if (bitvec_get(targets, w)) {
 			assert (port == OUT);
@@ -97,12 +99,12 @@ found:;
 	port_t p_port = s_port ^ 1;
 
 	if (p == s) {
-	    flow->vertex_flow[p] ^= 1;
+	    vertex_flow[p] ^= 1;
 	} else {
 	    if (p_port == OUT)
-		flow->edge_flow[p][s] ^= 1;
+		edge_flow[p][s] ^= 1;
 	    else
-		flow->edge_flow[s][p] ^= 1;
+		edge_flow[s][p] ^= 1;
 	}
 	if (bitvec_get(sources, p) && p_port == IN) {
 	    flow->flow++;
