@@ -20,6 +20,9 @@ val copy : t -> t
 val connect : t -> int -> int -> unit
 (** [connect g v w] connects vertices [v] and [w] in [g]. O(n^2)  *)
 
+val deg : t -> int -> int
+(** [deg g v] returns the number of neighbors of [v] in [g].  *)
+
 val is_connected : t -> int -> int -> bool
 (** [is_connected g v w] returns true if [v] and [w] are connected in [g].
     O(n)  *)

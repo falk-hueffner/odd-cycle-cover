@@ -82,6 +82,14 @@ let union s1 s2 =
     r;
 ;;
 
+let intersection s1 s2 =
+  let r = create (max (length s1) (length s2)) in
+    for i = 0 to (min (length s1) (length s2)) - 1 do
+      put r i (is_set s1 i && is_set s2 i)
+    done;
+    r;
+;;
+
 let output channel s =
   Printf.fprintf channel "[%d:" (count s);
   iter (fun x -> Printf.fprintf channel " %d" x) s;

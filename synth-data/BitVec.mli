@@ -67,6 +67,10 @@ val union : t -> t -> t
 (** [union s1 s2] returns a copy of the larger of [s1] and [s2] with
     positions that have a 1-bit in the other set to 1.  *)
 
+val intersection : t -> t -> t
+(** [intersection s1 s2] returns a set the size of the larger of [s1]
+    and [s2] with 1-bits in positions where both sets have a 1-bit.  *)
+
 val output : out_channel -> t -> unit
 (** [output c s] prints a debug representation of [s] to channel [c].  *)
 

@@ -41,6 +41,8 @@ let grow g size' =
 	 else [||]);
 ;;
 
+let deg g v = Array.length g.edges.(v);;
+
 let is_connected g v u = (v < size g) && array_contains (g.edges.(v)) u;;
 
 let connect g u v =
