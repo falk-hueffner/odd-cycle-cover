@@ -5,10 +5,32 @@
 #include "graph.h"
 #include "util.h"
 
+#define NULL_VERTEX ((vertex) -1)
+struct flow {
+    size_t size, flow;
+    vertex *come_from;
+    vertex *go_to;
+};
+
 typedef bool port_t;
 #define IN false
 #define OUT true
 #define PORT(port) (port == IN ? "in" : "out")
+
+
+size_t flow_flow(const struct flow *flow) {
+    return flow->flow;
+}
+
+bool flow_vertex_flow(const struct flow *flow, vertex v) {
+    return flow->go_to[v] != NULL_VERTEX || flow->come_from[v] != NULL_VERTEX;
+}
+bool flow_is_source(const struct flow *flow, vertex v) {
+    return flow->go_to[v] != NULL_VERTEX && flow->come_from[v] == NULL_VERTEX;
+}
+bool flow_is_target(const struct flow *flow, vertex v) {
+    return flow->go_to[v] == NULL_VERTEX && flow->come_from[v] != NULL_VERTEX;
+}
 
 void flow_clear(struct flow *flow) {
     for (size_t i = 0; i < flow->size; ++i)
@@ -16,15 +38,16 @@ void flow_clear(struct flow *flow) {
     flow->flow = 0;
 }
 
-struct flow flow_make(size_t size) {
-    struct flow flow = (struct flow) {
+struct flow* flow_make(size_t size) {
+    struct flow* flow = malloc(sizeof (*flow));
+    *flow = (struct flow) {
 	.size      = size,
 	.flow      = 0,
-	.come_from = malloc(size * sizeof (*flow.come_from)),
-	.go_to     = malloc(size * sizeof (*flow.go_to)),
+	.come_from = malloc(size * sizeof (flow->come_from)),
+	.go_to     = malloc(size * sizeof (flow->go_to)),
     };
 
-    flow_clear(&flow);
+    flow_clear(flow);
 
     return flow;
 }

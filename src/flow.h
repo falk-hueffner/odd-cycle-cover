@@ -5,26 +5,17 @@
 
 #include "graph.h"
 
-#define NULL_VERTEX ((vertex) -1)
-struct flow {
-    size_t size, flow;
-    vertex *come_from;
-    vertex *go_to;
-};
+struct flow;
 
-struct flow flow_make(size_t size);
+struct flow* flow_make(size_t size);
 void flow_clear(struct flow *flow);
 void flow_free(struct flow *flow);
 
-static inline bool flow_vertex_flow(const struct flow *flow, vertex v) {
-    return flow->go_to[v] != NULL_VERTEX || flow->come_from[v] != NULL_VERTEX;
-}
-static inline bool flow_is_source(const struct flow *flow, vertex v) {
-    return flow->go_to[v] != NULL_VERTEX && flow->come_from[v] == NULL_VERTEX;
-}
-static inline bool flow_is_target(const struct flow *flow, vertex v) {
-    return flow->go_to[v] == NULL_VERTEX && flow->come_from[v] != NULL_VERTEX;
-}
+size_t flow_flow(const struct flow *flow);
+bool flow_vertex_flow(const struct flow *flow, vertex v);
+bool flow_is_source(const struct flow *flow, vertex v);
+bool flow_is_target(const struct flow *flow, vertex v);
+
 bool flow_augment(struct flow *flow, const struct graph *g,
 		  size_t num_sources,
                   const struct bitvec *sources, const vertex *source_vertices,
