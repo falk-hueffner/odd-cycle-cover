@@ -180,19 +180,19 @@ struct bitvec *small_cut_partition(const struct graph *g,
 
 	if (use_gray) {
 	    if (bitvec_get(sources, y1[x])) {
-		flow_drain_source(&flow, g, y1[x], targets);
+		flow_drain_source(&flow, g, y1[x]);
 	    } else {
 		assert(bitvec_get(sources, y2[x]));
-		flow_drain_source(&flow, g, y2[x], targets);
+		flow_drain_source(&flow, g, y2[x]);
 	    }
 	    if (bitvec_get(targets, y1[x])) {
 		// might already be drained by previous drain action
 		if (flow_vertex_flow(&flow, y1[x]))
-		    flow_drain_target(&flow, g, sources, y1[x]);
+		    flow_drain_target(&flow, g, y1[x]);
 	    } else {
 		assert(bitvec_get(targets, y2[x]));
 		if (flow_vertex_flow(&flow, y2[x]))
-		    flow_drain_target(&flow, g, sources, y2[x]);
+		    flow_drain_target(&flow, g, y2[x]);
 	    }
 	}
 	

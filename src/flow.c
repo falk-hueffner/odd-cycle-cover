@@ -161,9 +161,9 @@ found:;
 }
 
 vertex flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
-			 vertex source, const struct bitvec *targets) {
+			 vertex source) {
     vertex v = source;
-    while (!bitvec_get(targets, v)) {
+    while (flow->go_to[v] != NULL_VERTEX) {
 	vertex succ = flow->go_to[v];
 	flow->go_to[v] = NULL_VERTEX;
 	flow->come_from[succ] = NULL_VERTEX;
@@ -174,9 +174,9 @@ vertex flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
 }
 
 vertex flow_drain_target(struct flow *flow, UNUSED const struct graph *g,
-			 const struct bitvec *sources, vertex target) {
+			 vertex target) {
     vertex v = target;
-    while (!bitvec_get(sources, v)) {
+    while (flow->come_from[v] != NULL_VERTEX) {
 	vertex pred = flow->come_from[v];
 	flow->come_from[v] = NULL_VERTEX;
 	flow->go_to[pred] = NULL_VERTEX;
