@@ -64,9 +64,9 @@ bool flow_augment(struct flow *flow, const struct graph *g,
 
 	GRAPH_NEIGHBORS_ITER(g, v, w) {
 	    vertex wcode = (w << 1) | wport;
-	    if (!seen[wcode]
-		&& (port == OUT ? !bitvec_get(flow->edge_flow[v], w)
-				:  bitvec_get(flow->edge_flow[w], v))) {
+	    if ((port == OUT ? !bitvec_get(flow->edge_flow[v], w)
+			     :  bitvec_get(flow->edge_flow[w], v))
+		&& !seen[wcode]) {
 		predecessors[wcode] = v;
 		
 		*qtail++ = wcode;
