@@ -81,6 +81,7 @@ static inline void bitvec_put(struct bitvec *v, size_t n, bool b) {
 
 struct bitvec *bitvec_make(size_t num_bits);
 void bitvec_copy(struct bitvec *d, const struct bitvec *s);
+struct bitvec *bitvec_clone(const struct bitvec *s);
 static inline void bitvec_free(struct bitvec *v) { free(v); }
 
 size_t bitvec_count(const struct bitvec *v);

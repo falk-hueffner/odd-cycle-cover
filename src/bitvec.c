@@ -14,6 +14,12 @@ void bitvec_copy(struct bitvec *d, const struct bitvec *s) {
     memcpy(d, s, sizeof (struct bitvec) + bitvec_bytes(s->num_bits));
 }
 
+struct bitvec *bitvec_clone(const struct bitvec *s) {
+    struct bitvec *d = bitvec_make(bitvec_size(s));
+    bitvec_copy(d, s);
+    return d;
+}
+
 size_t bitvec_find(const struct bitvec *v, size_t n) {
     if (n >= v->num_bits)
         return BITVEC_NOT_FOUND;
