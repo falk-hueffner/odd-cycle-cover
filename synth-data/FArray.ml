@@ -18,7 +18,7 @@ let mem a x =
     loop 0
 ;;
 
-let set a i x = let a = Array.copy a in Array.get a i x; a;;
+let set a i x = let a = Array.copy a in Array.set a i x; a;;
 let unsafe_set a i x = let a = Array.copy a in Array.unsafe_set a i x; a;;
 
 let grow a l x =
