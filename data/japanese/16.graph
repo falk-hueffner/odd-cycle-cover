@@ -1,0 +1,33 @@
+# Graph Name
+Conflict graph for '16a.txt'
+# Number of Vertices
+14
+# Number of Edges
+10
+# Vertex names
+v45
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+# Edges
+5 11
+5 7
+4 11
+4 7
+v45 5
+v45 4
+3 11
+3 7
+1 8
+1 0
+# EOF

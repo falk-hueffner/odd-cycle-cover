@@ -1,0 +1,39 @@
+# Graph Name
+Conflict graph for '25a.txt'
+# Number of Vertices
+15
+# Number of Edges
+15
+# Vertex names
+v212
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+# Edges
+9 12
+9 11
+9 10
+7 9
+4 7
+3 10
+v212 12
+v212 2
+2 11
+2 4
+8 13
+8 6
+8 5
+8 3
+8 0
+# EOF
