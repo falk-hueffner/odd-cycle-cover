@@ -160,8 +160,8 @@ found:;
     return true;    
 }
 
-void flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
-		       vertex source, const struct bitvec *targets) {
+vertex flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
+			 vertex source, const struct bitvec *targets) {
     vertex v = source;
     while (!bitvec_get(targets, v)) {
 	vertex succ = flow->go_to[v];
@@ -170,10 +170,11 @@ void flow_drain_source(struct flow *flow, UNUSED const struct graph *g,
 	v = succ;
     }
     flow->flow--;
+    return v;
 }
 
-void flow_drain_target(struct flow *flow, UNUSED const struct graph *g,
-		       const struct bitvec *sources, vertex target) {
+vertex flow_drain_target(struct flow *flow, UNUSED const struct graph *g,
+			 const struct bitvec *sources, vertex target) {
     vertex v = target;
     while (!bitvec_get(sources, v)) {
 	vertex pred = flow->come_from[v];
@@ -182,6 +183,7 @@ void flow_drain_target(struct flow *flow, UNUSED const struct graph *g,
 	v = pred;
     }
     flow->flow--;
+    return v;
 }
 
 void flow_vertex_cut(const struct flow *flow, const struct graph *g,
