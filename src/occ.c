@@ -7,6 +7,7 @@
 #include "flow.h"
 #include "graph.h"
 #include "occ.h"
+#include "util.h"
 
 extern bool verbose;
 
@@ -277,7 +278,7 @@ static struct bitvec *enum_occ_subsets(struct problem *problem) {
     uint64_t code = 0;
     uint64_t code_end = 1ULL << (problem->last_not_in_occ ? occ_size - 1 : occ_size);
     while (true) {
-#if 1
+#if 0
 	struct graph *t = graph_subgraph(problem->g, y_origs);
 	if (!graph_is_bipartite(t)) {
 	    graph_free(t);
@@ -293,7 +294,7 @@ static struct bitvec *enum_occ_subsets(struct problem *problem) {
 	if (cut)
 	    return build_occ(problem, y_origs, cut);
 
-    next:;
+    next: UNUSED;
 	size_t x = gray_change(code);
 	if (++code >= code_end)
 	    break;
@@ -315,6 +316,34 @@ static inline enum color invert_color(enum color c) {
     default: abort();
     }
 }
+
+static struct bitvec* bipsub_findcut(struct problem *problem,
+				     struct bitvec *subgraph) {
+    ALLOCA_BITVEC(clones, problem->g_prime->size);
+    for (size_t i = 0; i < problem->occ_size; i++)
+	bitvec_put(clones, problem->g->size + i,
+		   bitvec_get(subgraph, problem->occ_vertices[i]));
+    ALLOCA_BITVEC(g2sub, problem->g_prime->size);
+    for (size_t i = 0; i < problem->g->size; i++) {
+	if (bitvec_get(problem->occ, i))
+	    bitvec_put(g2sub, i, bitvec_get(subgraph, i));
+	else
+	    bitvec_set(g2sub, i);
+    }
+    bitvec_join(g2sub, clones);
+    problem->subsets_examined++;
+
+    struct graph *g2 = graph_subgraph(problem->g_prime, g2sub);
+    struct bitvec *cut = small_cut_partition(g2, subgraph, clones,
+					     problem->use_gray);
+    graph_free(g2);
+
+    if (cut)
+	return build_occ(problem, subgraph, cut);
+    else
+	return NULL;
+}
+
 struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
 			     enum color *colors, struct bitvec *subgraph,
 			     struct bitvec *in_queue,
@@ -330,29 +359,7 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
 	    if (graph_vertex_exists(g, v) && colors[v] == GREY)
 		break;
 	if (v == g->size) {
-	    ALLOCA_BITVEC(clones, problem->g_prime->size);
-	    for (size_t i = 0; i < problem->occ_size; i++)
-		bitvec_put(clones, problem->g->size + i,
-			   bitvec_get(subgraph, problem->occ_vertices[i]));
-	    ALLOCA_BITVEC(g2sub, problem->g_prime->size);
-	    for (size_t i = 0; i < problem->g->size; i++) {
-		if (bitvec_get(problem->occ, i))
-		    bitvec_put(g2sub, i, bitvec_get(subgraph, i));
-		else
-		    bitvec_set(g2sub, i);
-	    }
-	    bitvec_join(g2sub, clones);
-	    problem->subsets_examined++;
-
-	    struct graph *g2 = graph_subgraph(problem->g_prime, g2sub);
-	    struct bitvec *cut = small_cut_partition(g2, subgraph, clones,
-						     problem->use_gray);
-	    graph_free(g2);
-
-	    if (cut)
-		return build_occ(problem, subgraph, cut);
-	    else
-		return NULL;
+	    return bipsub_findcut(problem, subgraph);
 	} else {
 	    bitvec_set(in_queue, v);
 	    did_enqueue = true;

@@ -3,12 +3,7 @@
 #include "bitvec.h"
 #include "flow.h"
 #include "graph.h"
-
-#ifdef __GNUC__
-#define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif
+#include "util.h"
 
 typedef bool port_t;
 #define IN false
