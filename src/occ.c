@@ -318,7 +318,8 @@ static inline enum color invert_color(enum color c) {
 }
 
 static struct bitvec* bipsub_findcut(struct problem *problem,
-				     struct bitvec *subgraph) {
+				     struct bitvec *subgraph,
+				     enum color *colors) {
     ALLOCA_BITVEC(clones, problem->g_prime->size);
     for (size_t i = 0; i < problem->occ_size; i++)
 	bitvec_put(clones, problem->g->size + i,
@@ -334,8 +335,39 @@ static struct bitvec* bipsub_findcut(struct problem *problem,
     problem->subsets_examined++;
 
     struct graph *g2 = graph_subgraph(problem->g_prime, g2sub);
-    struct bitvec *cut = small_cut_partition(g2, subgraph, clones,
-					     problem->use_gray);
+    struct bitvec *cut = NULL;
+#if 1
+    struct flow flow = flow_make(g2->size);
+    ALLOCA_BITVEC(sources, g2->size);
+    ALLOCA_BITVEC(targets, g2->size);
+    vertex source_vertices[problem->occ_size];
+    size_t num_sources = 0;
+    for (size_t i = 0; i < problem->occ_size; i++) {
+	vertex v = problem->occ_vertices[i], v2 = problem->g->size + i;
+	if (colors[v] == WHITE) {
+	    bitvec_set(sources, v);
+	    bitvec_set(targets, v2);
+	    source_vertices[num_sources++] = v;
+	} else if (colors[v] == BLACK) {
+	    bitvec_set(sources, v2);
+	    bitvec_set(targets, v);
+	    source_vertices[num_sources++] = v2;
+	} else {
+	    assert(colors[v] == RED);
+	}
+    }
+    while (flow.flow < num_sources
+	   && flow_augment(&flow, g2, num_sources, sources,
+			   source_vertices, targets))
+	continue;
+    
+    if (flow.flow < num_sources) {
+	cut = bitvec_make(g2->size);
+	flow_vertex_cut(&flow, g2, sources, cut);
+    }
+#else
+    cut = small_cut_partition(g2, subgraph, clones, problem->use_gray);
+#endif
     graph_free(g2);
 
     if (cut)
@@ -359,7 +391,7 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
 	    if (graph_vertex_exists(g, v) && colors[v] == GREY)
 		break;
 	if (v == g->size) {
-	    return bipsub_findcut(problem, subgraph);
+	    return bipsub_findcut(problem, subgraph, colors);
 	} else {
 	    bitvec_set(in_queue, v);
 	    did_enqueue = true;
@@ -379,9 +411,6 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
 	    color = invert_color(neighbor_color);
 	}
     }
-    if (color == GREY)
-	color = WHITE;
-    colors[v] = color;
 
     GRAPH_NEIGHBORS_ITER(g, v, w) {
 	if (colors[w] == GREY && !bitvec_get(in_queue, w)) {
@@ -392,10 +421,26 @@ struct bitvec *bipsub_branch(struct problem *problem, const struct graph *g,
 
     bitvec_set(subgraph, v);
 
-    struct bitvec *new_occ = bipsub_branch(problem, g, colors, subgraph,
-					   in_queue, qhead, qtail);
+    bool was_grey = color == GREY;
+    if (was_grey)
+	color = WHITE;
+    colors[v] = color;
+
+    struct bitvec *new_occ;
+    new_occ = bipsub_branch(problem, g, colors, subgraph,
+			    in_queue, qhead, qtail);
     if (new_occ)
 	return new_occ;
+
+#if 1
+    if (was_grey) {
+	colors[v] = BLACK;
+	new_occ = bipsub_branch(problem, g, colors, subgraph,
+				in_queue, qhead, qtail);
+	if (new_occ)
+	    return new_occ;
+    }
+#endif
 
     bitvec_unset(subgraph, v);
     bitvec_copy(in_queue, in_queue_backup);
