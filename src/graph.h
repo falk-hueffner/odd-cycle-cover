@@ -25,6 +25,16 @@ struct graph {
     for (vertex *__pw = g->vertices[v]->neighbors, *__pw_end = __pw + g->vertices[v]->deg; \
 	 __pw != __pw_end && (w = *__pw, 1); __pw++)
 
+#define GRAPH_ITER_EDGES(g, v, w)				\
+    for (v = 0; v < g->size; v++)				\
+	if (g->vertices[v])					\
+	    for (vertex *__pw = g->vertices[v]->neighbors,	\
+		        *__pw_end = __pw + g->vertices[v]->deg;	\
+		 __pw != __pw_end && (w = *__pw, 1); __pw++)	\
+		if (v < w)
+
+
+struct graph *graph_make(size_t n);
 struct graph *graph_copy(const struct graph *g);
 struct graph *graph_grow(struct graph *g, size_t size);
 struct graph *graph_subgraph(const struct graph *g, const struct bitvec *s);
@@ -41,6 +51,7 @@ bool graph_is_bipartite(const struct graph *g);
 bool graph_two_coloring(const struct graph *g, struct bitvec *colors);
 
 void graph_connect(struct graph *g, vertex v, vertex w);
+void graph_disconnect(struct graph *g, vertex v, vertex w);
 
 void graph_output(const struct graph *g, FILE* stream, const char **vertices);
 static inline void graph_print(const struct graph *g, const char **vertices) {
