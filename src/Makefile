@@ -28,7 +28,7 @@ $(PROG): $(OBJS)
 	$(CLINK) $(OBJS) -o $(PROG)
 
 clean:
-	rm -f $(PROG) $(OBJS) core
+	rm -f $(PROG) $(OBJS) core gmon.out
 
 realclean: clean
 	rm -f *~ *.bak
