@@ -77,6 +77,14 @@ static struct vertex *malloc_vertices(size_t n) {
     return result;
 }
 
+struct graph *graph_make(size_t size) {
+    struct graph *g = calloc(sizeof (struct graph)
+			     + size * sizeof *g->vertices, 1);
+    g->capacity = g->size = size;
+    return g;
+}
+
+
 void graph_connect(struct graph *g, vertex v, vertex w) {
     assert(v < g->size);
     assert(w < g->size);
@@ -88,6 +96,25 @@ void graph_connect(struct graph *g, vertex v, vertex w) {
     g->vertices[w]->neighbors[g->vertices[w]->deg++] = v;
 }
 
+void graph_disconnect(struct graph *g, vertex v, vertex w) {
+    assert(v < g->size);
+    assert(w < g->size);
+    assert(graph_vertex_exists(g, v));
+    assert(graph_vertex_exists(g, w));
+
+    for (size_t i = 0; i < g->vertices[v]->deg; i++) {
+	if (g->vertices[v]->neighbors[i] == w) {
+	    g->vertices[v]->neighbors[i] =
+		g->vertices[v]->neighbors[--g->vertices[v]->deg];
+	}
+    }
+    for (size_t i = 0; i < g->vertices[w]->deg; i++) {
+	if (g->vertices[w]->neighbors[i] == v) {
+	    g->vertices[w]->neighbors[i] =
+		g->vertices[w]->neighbors[--g->vertices[w]->deg];
+	}
+    }
+}
 
 struct graph *graph_subgraph(const struct graph *g, const struct bitvec *s) {
     size_t size = g->size;
