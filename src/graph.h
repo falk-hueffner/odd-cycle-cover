@@ -25,8 +25,8 @@ struct graph {
     for (vertex *__pw = g->vertices[v]->neighbors, *__pw_end = __pw + g->vertices[v]->deg; \
 	 __pw != __pw_end && (w = *__pw, 1); __pw++)
 
-struct graph *graph_make(void);
-struct graph *graph_grow(struct graph * g, size_t size);
+struct graph *graph_copy(const struct graph *g);
+struct graph *graph_grow(struct graph *g, size_t size);
 struct graph *graph_subgraph(const struct graph *g, const struct bitvec *s);
 void graph_free(struct graph *g);
 
