@@ -38,7 +38,9 @@ val toggle : t -> int -> unit
 
 val not_found : int
 val iter : (int -> unit) -> t -> unit
-(** [iter f s] calls [f n] for each [n] where [s] has a 1-bit .  *)  
+(** [iter f s] calls [f n] for each [n] where [s] has a 1-bit .  *)
+
+val fold : ('a -> int -> 'a) -> 'a -> t -> 'a
 
 val find_0 : t -> int -> int
 (** [find_0 s n] returns the first position in [s] larger or equal

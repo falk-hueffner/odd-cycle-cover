@@ -5,19 +5,16 @@
 type t
 (** The type of a graph.  *)
 
-val create : unit -> t
-(** Returns a new graph.  *)
+val empty : t
+(** Returns the empty graph.  *)
 
 val size : t -> int
 (** Returns the highest number of a vertex that was connected, plus one.  *)
 
-val grow : t -> int -> unit
+val grow : t -> int -> t
 (** [grow g t] makes sure [size g] will return at least [t].  *)
 
-val copy : t -> t
-(** Returns a copy of a graph.  *)
-
-val connect : t -> int -> int -> unit
+val connect : t -> int -> int -> t
 (** [connect g v w] connects vertices [v] and [w] in [g]. O(n^2)  *)
 
 val deg : t -> int -> int
@@ -34,14 +31,16 @@ val fold_neighbors : ('a -> int -> 'a) -> 'a -> t -> int -> 'a
 (** [iter_neighbors f x g v] is [f (...(f x v1) ... vn)] for each
     neighbor [vi] of [v] in [g].  *)
 
-val neighbors_array : t -> int -> int array
+val neighbors_array : t -> int -> int FArray.t
 (** [neighbors_array g v] returns an array with the neighbors of [v]
     in [g].  *)
 
 val iter_edges : (int -> int -> unit) -> t -> unit
 (** [iter_edges f g] calls [f u v] for each edge [(u, v)] in [g].  *)
 
-val delete_vertex : t -> int -> unit
+val fold_edges : ('a -> int -> int -> 'a) -> t -> 'a -> 'a
+
+val delete_vertex : t -> int -> t
 (** [delete_vertex g v] removes all edges involving [v] in [g]. [size] is
     unchanged.  *)
 

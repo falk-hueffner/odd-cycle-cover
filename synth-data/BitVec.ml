@@ -22,6 +22,15 @@ let iter f s =
    done
 ;;
 
+let fold f accu s =
+  let rec loop accu n =
+    if n >= (length s)
+    then accu
+    else loop (if is_set s n then f accu n else accu) (succ n)
+  in
+    loop accu 0
+;;
+
 let not_found = -1;;
 
 let find_0 s p =
@@ -91,7 +100,7 @@ let intersection s1 s2 =
 ;;
 
 let output channel s =
-  Printf.fprintf channel "[%d:" (count s);
+  Printf.fprintf channel "[%d/%d:" (count s) (length s);
   iter (fun x -> Printf.fprintf channel " %d" x) s;
   output_char channel ']';
 ;;
