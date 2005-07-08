@@ -1,10 +1,11 @@
-/* Eleazar Eskin, Eran Halperin, Richard Karp.
-   Efficient Reconstruction of Haplotype Structure via Perfect Phylogeny.
-   Journal of Bioinformatics and Computational Biology. 1:1,1-20, 2003.  */
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined (__SVR4) && defined (__sun)
+int getopt(int argc, char * const argv[], const char *optstring);
+#else
 #include <getopt.h>
+#endif
 #include <unistd.h>
 #include <sys/times.h>
 
