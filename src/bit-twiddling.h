@@ -2,7 +2,6 @@
 #define BIT_TWIDDLING_H
 
 #include <limits.h>
-#include <stdint.h>
 
 #if   LONG_MAX == 2147483647
 # define LONG_BITS 32
@@ -75,14 +74,5 @@ static inline unsigned popcountl(unsigned long x) {
 }
 
 #endif // HAVE_BUILTIN_BITOPS
-
-static inline uint64_t gray_code(uint64_t x) {
-    return x ^ (x >> 1);
-}
-
-static inline unsigned gray_change(uint64_t x) {
-    //return ctzl(gray_code(x) ^ gray_code(x + 1));
-    return ctzl(~x & (x + 1));
-}
 
 #endif // BIT_TWIDDLING_H

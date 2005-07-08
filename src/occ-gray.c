@@ -48,7 +48,7 @@ static inline void update_vertex(struct occ_problem *problem, size_t i, int g[],
     g[i] = new_role;
 }
 
-uint64_t ipow(uint64_t a, uint64_t b) {
+unsigned long long ipow(unsigned long long a, unsigned long long b) {
     if (b == 0)
         return 1;
     else
@@ -96,7 +96,7 @@ struct bitvec *occ_shrink_gray(struct occ_problem *problem) {
 	update_vertex(problem, i, g, SOURCE);
     }
 
-    size_t num_codes;
+    unsigned long long num_codes;
     if (problem->last_not_in_occ)
 	num_codes = ipow(3, problem->occ_size) / 3; // see comment above
     else
