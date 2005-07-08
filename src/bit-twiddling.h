@@ -12,16 +12,23 @@
 #endif
 
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
-# define HAVE_BUILTIN_BITOPS
+# define HAVE_BUILTIN_BITOPS 1
 #endif
 
 #ifdef HAVE_BUILTIN_BITOPS
 # define ctzl(x) __builtin_ctzl(x)
+# define ctzll(x) __builtin_ctzll(x)
 #elif defined(__i386__)
-static inline unsigned long ctzl(unsigned long x) {
+static inline unsigned ctzl(unsigned long x) {
     unsigned count;
     __asm__ ("bsfl %1,%0" : "=r" (count) : "rm" (x));
     return count;
+}
+static inline unsigned ctzll(unsigned long long x) {
+    if (x & 0xffffffff)
+	return __builtin_ctzl(x);
+    else
+	return 32 + __builtin_ctzl(x >> 32);
 }
 #else
 static inline unsigned ctzl(unsigned long x) {
@@ -29,6 +36,15 @@ static inline unsigned ctzl(unsigned long x) {
 #if LONG_BITS == 64
    if ((x & 0xffffffff) == 0) n += 32, x >>= 32;
 #endif
+   if ((x & 0x0000ffff) == 0) n += 16, x >>= 16;
+   if ((x & 0x000000ff) == 0) n +=  8, x >>=  8;
+   if ((x & 0x0000000f) == 0) n +=  4, x >>=  4;
+   if ((x & 0x00000003) == 0) n +=  2, x >>=  2;
+   return n - (x & 1);
+}
+static inline unsigned ctzll(unsigned long long x) {
+   unsigned n = 1;
+   if ((x & 0xffffffff) == 0) n += 32, x >>= 32;
    if ((x & 0x0000ffff) == 0) n += 16, x >>= 16;
    if ((x & 0x000000ff) == 0) n +=  8, x >>=  8;
    if ((x & 0x0000000f) == 0) n +=  4, x >>=  4;
@@ -74,5 +90,14 @@ static inline unsigned popcountl(unsigned long x) {
 }
 
 #endif // HAVE_BUILTIN_BITOPS
+
+static inline unsigned long long gray_code(unsigned long long x) {
+    return x ^ (x >> 1);
+}
+
+static inline unsigned long long gray_change(unsigned long long x) {
+    //return ctzll(gray_code(x) ^ gray_code(x + 1));
+    return ctzll(~x & (x + 1));
+}
 
 #endif // BIT_TWIDDLING_H
