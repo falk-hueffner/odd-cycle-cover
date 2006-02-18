@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -214,67 +215,80 @@ void graph_output(const struct graph *g, FILE *stream, const char **vertices) {
     fprintf(stream, "}\n");
 }
 
-struct graph *graph_read(FILE* stream, const char ***vertices_out) {
-    // We ignore buffer overruns for simplicity.
-    char buf[4096];
-    struct edge { size_t v, w; } edges[16384];
-    size_t num_edges = 0;
-    const char **vertices = malloc(8192 * sizeof *vertices);
-    size_t num_vertices = 0;
+static int pstrcmp(const void *p1, const void *p2) {
+    const char *s1 = *(const char **) p1;
+    const char *s2 = *(const char **) p2;
 
-    while (fgets(buf, sizeof buf, stream)) {
-	if (strncmp("# Graph Name", buf, strlen("# Graph Name")) == 0) {
-	    // Special hack for Sebastian's graph format.
-	    do {
-		fgets(buf, sizeof buf, stream);
-	    } while (strncmp("# Edges", buf, strlen("# Edges")) != 0);
-	    continue;
+    return strcmp(s1, s2);
+}
+
+struct graph *graph_read(FILE *stream, const char ***vertex_names) {
+    size_t line_capacity = 0, line_num = 0;
+    char *line = NULL;
+    size_t num_names = 0, names_capacity = 16;
+    const char **names = malloc(names_capacity * sizeof *names);
+    size_t num_edges = 0, edges_capacity = 64;
+    struct edge { const char *v[2]; } *edges
+	= malloc(edges_capacity * sizeof *edges);
+
+    while (get_line(&line, &line_capacity, stream)) {
+	line_num++;
+	const char *name[2];
+	name[0] = strtok(line, WHITESPACE);
+        if (!name[0] || name[0][0] == '#')
+            continue;
+        name[1] = strtok(NULL, WHITESPACE);
+        if (!name[1] || name[1][0] == '#') {
+            fprintf(stderr, "Syntax error on line %zu\n", line_num);
+            exit(1);
+        }
+        const char *rest = strtok(NULL, WHITESPACE);
+        if (rest && rest[0] != '#')
+            fprintf(stderr, "warning: ignoring trailing garbage on line %zu\n",
+		    line_num);
+
+	// This is O(n^2) or so, but anything better seems like overkill.
+	for (size_t i = 0; i < 2; i++) {
+	    const char **p;
+	    //fprintf(stderr, "contents:\n");
+	    //for (size_t j = 0; j < num_names; j++)
+	    //	fprintf(stderr, " %s [%zd]\n", names[j], j);
+
+	    if ((p = bsearch(&name[i], names, num_names, sizeof *names,
+			     pstrcmp))) {
+		name[i] = *p;
+		//fprintf(stderr, "found %s [%p]\n", name[i], name[i]);
+	    } else {
+		if (num_names >= names_capacity) {
+		    names_capacity *= 2;
+		    names = realloc(names, names_capacity * sizeof *names);
+		}
+		name[i] = dup_str(name[i]);
+		names[num_names++] = name[i];
+		qsort(names, num_names, sizeof *names, pstrcmp);
+		//fprintf(stderr, "created %s [%p]\n", name[i], name[i]);
+	    }
 	}
-	const char *v_name = strtok(buf, " ,\t\n\r");
-	if (!v_name || v_name[0] == '#')
-	    continue;
-
-	const char *w_name = strtok(NULL, " ,\t\n\r");
-	if (!w_name) {
-	    fprintf(stderr, "syntax error\n");
-	    exit(1);
+	if (num_edges >= edges_capacity) {
+	    edges_capacity *= 2;
+	    edges = realloc(edges, edges_capacity * sizeof *edges);
 	}
-
-	size_t v, w;
-	for (v = 0; v < num_vertices; v++) {
-	    if (strcmp(vertices[v], v_name) == 0)
-		break;
-	}
-	if (v == num_vertices)
-	    vertices[num_vertices++] = dup_str(v_name);
-
-	for (w = 0; w < num_vertices; w++)
-	    if (strcmp(vertices[w], w_name) == 0)
-		break;
-	if (w == num_vertices)
-	    vertices[num_vertices++] = dup_str(w_name);
-
-	edges[num_edges++] = (struct edge) { v, w };
+	edges[num_edges++] = (struct edge) { {name[0], name[1]} };
     }
 
-    size_t degs[num_vertices];
-    memset(degs, 0, sizeof degs);
-
-    for (size_t e = 0; e < num_edges; e++) {
-	degs[edges[e].v]++;
-	degs[edges[e].w]++;
+    struct graph *g = graph_make(num_names);
+    
+    for (size_t i = 0; i < num_edges; i++) {
+	vertex v[2];
+	for (size_t j = 0; j < 2; j++) {
+	    const char **p = bsearch(&edges[i].v[j], names, num_names,
+				     sizeof *names, pstrcmp);
+	    v[j] = p - names;
+	}
+	graph_connect(g, v[0], v[1]);
     }
+    free(edges);
+    *vertex_names = names;
 
-    struct graph *g = malloc(sizeof (struct graph)
-			     + sizeof (struct vertex *) * num_vertices);
-    g->size = num_vertices;
-    g->capacity = num_vertices;
-    for (size_t v = 0; v < g->size; v++)
-	g->vertices[v] = malloc_vertices(degs[v]);
-
-    for (size_t e = 0; e < num_edges; e++)
-	graph_connect(g, edges[e].v, edges[e].w);
-
-    *vertices_out = vertices;
     return g;
 }
