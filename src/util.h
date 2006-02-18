@@ -17,8 +17,6 @@ bool get_line(char **lineptr, size_t *n, FILE *stream);
 
 /// A string literal containing all whitespace characters.
 #define WHITESPACE " \f\r\t\v"
-/// A string literal containing all digits.
-#define DIGITS "0123456789"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__((unused))
