@@ -1,25 +1,3 @@
-# Graph Name
-Conflict graph for '25a.txt'
-# Number of Vertices
-14
-# Number of Edges
-14
-# Vertex names
-v69
-12
-11
-10
-9
-8
-7
-6
-5
-4
-3
-2
-1
-0
-# Edges
 8 9
 v69 9
 v69 6
@@ -34,4 +12,3 @@ v69 6
 7 3
 7 2
 7 1
-# EOF

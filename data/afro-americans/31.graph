@@ -1,41 +1,3 @@
-# Graph Name
-Conflict graph for '31a.txt'
-# Number of Vertices
-30
-# Number of Edges
-51
-# Vertex names
-v1419
-v520
-v519
-v59
-v419
-v45
-v017
-22
-21
-20
-19
-18
-17
-16
-15
-14
-13
-12
-11
-10
-9
-8
-7
-6
-5
-4
-3
-2
-1
-0
-# Edges
 17 20
 17 19
 16 17
@@ -87,4 +49,3 @@ v017 0
 22 3
 22 2
 22 1
-# EOF
