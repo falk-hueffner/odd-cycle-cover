@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *strdup(const char *s);	/* string.h broken on alpha-linux */
-
+#include "util.h"
 #include "bitvec.h"
 #include "graph.h"
 
@@ -247,13 +246,13 @@ struct graph *graph_read(FILE* stream, const char ***vertices_out) {
 		break;
 	}
 	if (v == num_vertices)
-	    vertices[num_vertices++] = strdup(v_name);
+	    vertices[num_vertices++] = dup_str(v_name);
 
 	for (w = 0; w < num_vertices; w++)
 	    if (strcmp(vertices[w], w_name) == 0)
 		break;
 	if (w == num_vertices)
-	    vertices[num_vertices++] = strdup(w_name);
+	    vertices[num_vertices++] = dup_str(w_name);
 
 	edges[num_edges++] = (struct edge) { v, w };
     }

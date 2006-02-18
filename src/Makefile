@@ -10,6 +10,7 @@ LDPATH	=
 LIBS	=
 
 SOURCES	= \
+	util.c		\
 	bitvec.c	\
 	edge-flow.c	\
 	edge-occ.c	\
