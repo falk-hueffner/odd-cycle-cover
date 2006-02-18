@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include "bitvec.h"
 #include "edge-flow.h"
 #include "edge-occ.h"
