@@ -5,6 +5,7 @@
 #include "edge-occ.h"
 
 extern bool verbose;
+extern unsigned long long augmentations;
 
 struct edge_occ *edge_occ_make(size_t capacity) {
     struct edge_occ *occ = malloc(sizeof (struct edge_occ)
@@ -48,7 +49,7 @@ struct edge_occ *edge_occ_shrink(const struct graph *g,
 	    edge_flow_clear(flow);
 	while (flow->flow < occ->size
 	       && edge_flow_augment(flow, g2, sources, targets))
-	    continue;
+	    augmentations++;
 
 	if (flow->flow < occ->size) {
 	    cut = edge_flow_cut(flow, g2, sources);
