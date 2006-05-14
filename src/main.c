@@ -1,8 +1,9 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #if defined (__SVR4) && defined (__sun)
-int getopt(int argc, char * const argv[], const char *optstring);
+int getopt(int argc, const char *argv[], const char *optstring);
 #else
 #include <getopt.h>
 #endif
@@ -23,6 +24,7 @@ double user_time(void) {
 void usage(FILE *stream) {
     fprintf(stream,
 	    "occ: Calculate minimum odd cycle cover\n"
+	    "  -e  Cover edges instead of vertices\n"
 	    "  -d  Start with a random heuristic OCC and shrink it succesively\n"
 	    "  -b  Enumerate valid partitions only for bipartite subgraphs\n"
 	    "  -g  Enumerate valid partitions by gray code\n"
@@ -92,7 +94,7 @@ struct bitvec *find_occ(const struct graph *g) {
 		occ = occ_new;
 		if (!occ_is_occ(g2, occ)) {
 		    fprintf(stderr, "Internal error!\n");
-		    abort();
+		    assert(0);
 		}
 	    }
 	    graph_free(g2);
