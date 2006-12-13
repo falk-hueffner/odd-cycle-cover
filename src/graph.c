@@ -91,6 +91,7 @@ struct graph *graph_make(size_t size) {
 void graph_connect(struct graph *g, vertex v, vertex w) {
     assert(v < g->size);
     assert(w < g->size);
+    assert(v != w);
 
     grow_neighbors(g, v, graph_vertex_exists(g, v) ? g->vertices[v]->deg + 1 : 1);
     grow_neighbors(g, w, graph_vertex_exists(g, w) ? g->vertices[w]->deg + 1 : 1);
