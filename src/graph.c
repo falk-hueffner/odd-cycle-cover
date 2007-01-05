@@ -87,6 +87,14 @@ struct graph *graph_make(size_t size) {
     return g;
 }
 
+bool graph_is_connected(const struct graph *g, vertex v, vertex w) {
+    assert(v < g->size);
+    assert(w < g->size);
+    for (size_t i = 0; i < g->vertices[v]->deg; i++)
+	if (g->vertices[v]->neighbors[i] == w)
+	    return true;
+    return false;
+}
 
 void graph_connect(struct graph *g, vertex v, vertex w) {
     assert(v < g->size);
@@ -286,7 +294,11 @@ struct graph *graph_read(FILE *stream, const char ***vertex_names) {
 				     sizeof *names, pstrcmp);
 	    v[j] = p - names;
 	}
-	graph_connect(g, v[0], v[1]);
+	if (graph_vertex_exists(g, v[0]) && graph_vertex_exists(g, v[1])
+	    && graph_is_connected(g, v[0], v[1]))
+	    fprintf(stderr, "warning: duplicate edge\n");// {%s, %s}\n", names[v[0]], names[v[1]]);
+	else
+	    graph_connect(g, v[0], v[1]);
     }
     free(edges);
     *vertex_names = names;

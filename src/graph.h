@@ -49,6 +49,7 @@ static inline bool graph_vertex_exists(const struct graph *g, vertex v) {
     assert(v < g->size);
     return ((size_t) g->vertices[v] & 1) == 0;
 }
+bool graph_is_connected(const struct graph *g, vertex v, vertex w);
 bool graph_is_bipartite(const struct graph *g);
 bool graph_two_coloring(const struct graph *g, struct bitvec *colors);
 

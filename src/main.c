@@ -104,26 +104,58 @@ struct bitvec *find_occ(const struct graph *g) {
 }
 
 struct edge_occ *find_edge_occ(const struct graph *g) {
-    struct edge_occ *occ = edge_occ_make(0);
-    vertex v, w;
-    struct graph *g2 = graph_make(g->size);
-    GRAPH_ITER_EDGES(g, v, w) {
-	graph_connect(g2, v, w);
-	if (edge_occ_is_occ(g2, occ))
-	    continue;
-	occ = realloc(occ, sizeof (struct edge_occ)
-		      + (occ->size + 1) * sizeof *occ->edges);
-	occ->edges[occ->size++] = (struct edge) { v, w };
-	assert(edge_occ_is_occ(g2, occ));
-	if (verbose) {
-	    fprintf(stderr, "size = %3zd ", graph_num_edges(g2));
-	    fprintf(stderr, "occ = "); edge_occ_dump(occ);
-	    fprintf(stderr, "\n");
+    struct edge_occ *occ;
+    if (downwards) {
+	occ = edge_occ_make(graph_num_edges(g));
+	vertex v, w;
+	GRAPH_ITER_EDGES(g, v, w) {
+	    occ->edges[occ->size++] = (struct edge) {v, w};
 	}
-	struct edge_occ *new_occ = edge_occ_shrink(g2, occ, use_gray);
-	if (new_occ) {
+	while (true) {
+	    for (size_t i = 0; i < occ->size; ) {
+		struct edge e = occ->edges[i];
+		occ->edges[i] = occ->edges[occ->size - 1];
+		--occ->size;
+		if (!edge_occ_is_occ(g, occ)) {
+		    ++occ->size;
+		    occ->edges[i] = e;
+		    ++i;
+		}
+	    }
+	    assert(edge_occ_is_occ(g, occ));
+	    if (verbose) {
+		fprintf(stderr, "size = %3zd ", graph_num_edges(g));
+		fprintf(stderr, "occ = "); edge_occ_dump(occ);
+		fprintf(stderr, "\n");
+	    }
+	    struct edge_occ *new_occ = edge_occ_shrink(g, occ, use_gray);
+	    if (!new_occ)
+		break;
 	    free(occ);
 	    occ = new_occ;
+	}
+    } else {
+	occ = edge_occ_make(0);
+	vertex v, w;
+	struct graph *g2 = graph_make(g->size);
+	GRAPH_ITER_EDGES(g, v, w) {
+	    graph_connect(g2, v, w);
+	    if (edge_occ_is_occ(g2, occ))
+		continue;
+	    occ = realloc(occ, sizeof (struct edge_occ)
+			  + (occ->size + 1) * sizeof *occ->edges);
+	    occ->edges[occ->size++] = (struct edge) { v, w };
+	    assert(edge_occ_is_occ(g2, occ));
+	    if (verbose) {
+		fprintf(stderr, "size = %3zd ", graph_num_edges(g2));
+		fprintf(stderr, "occ = "); edge_occ_dump(occ);
+		fprintf(stderr, "\n");
+	    }
+	    struct edge_occ *new_occ = edge_occ_shrink(g2, occ, use_gray);
+	    if (new_occ) {
+		free(occ);
+		occ = new_occ;
+	    }
 	}
     }
 
@@ -147,9 +179,10 @@ int main(int argc, char *argv[]) {
 
     const char **vertices;
     struct graph *g = graph_read(stdin, &vertices);
+/*     graph_print(g, 0); */
+/*     fflush(stdout); */
     size_t occ_size;
 
-    
     if (!edge_occ) {
 	struct bitvec *occ = find_occ(g);
 	occ_size = bitvec_count(occ);
