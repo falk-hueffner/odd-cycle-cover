@@ -1,10 +1,16 @@
 This package contains the source and the test data for the paper
 
-Falk H�ffner.
-Algorithm Engineering for Optimal Graph Bipartization.
-Proceedings of the 4th International Workshop on Efficient and
-Experimental Algorithms (WEA 2005), Santorini Island, Greece, May
-2005. Lecture Notes in Computer Science. Springer, 2005. To appear.
+Falk Hüffner.
+Algorithm Engineering for Optimal Graph Nipartization.
+Journal of Graph Algorithms and Applications, 13(2):77–98, 2009.
+http://dx.doi.org/10.7155/jgaa.00177
+
+A slightly updated description is in the thesis
+
+Falk Hüffner.
+Algorithms and Experiments for Parameterized Approaches to Hard Graph Problems.
+PhD thesis, Institut für Informatik, Friedrich-Schiller-Universität Jena, 2007.
+http://hueffner.de/falk/diss-hueffner07.pdf
 
 
 Graph Bipartization solver
@@ -73,9 +79,9 @@ See
 Sebastian Wernicke.
 On the algorithmic tractability of single nucleotide polymorphism
 (SNP) analysis and related problems.
-Diplomarbeit, Universit�t T�bingen, 2003.
+Diplomarbeit, UniversitÃ¤t TÃ¼bingen, 2003.
 
 for details on the data and the file format.
 
 
--- Falk Hueffner <hueffner at minet.uni-jena.de>, March 16 2005
+-- Falk Hüffner (http://hueffner.de/falk/), March 16 2005
