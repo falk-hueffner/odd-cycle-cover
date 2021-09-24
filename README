@@ -1,0 +1,81 @@
+This package contains the source and the test data for the paper
+
+Falk Hüffner.
+Algorithm Engineering for Optimal Graph Bipartization.
+Proceedings of the 4th International Workshop on Efficient and
+Experimental Algorithms (WEA 2005), Santorini Island, Greece, May
+2005. Lecture Notes in Computer Science. Springer, 2005. To appear.
+
+
+Graph Bipartization solver
+==========================
+
+The solver is written in ISO C99 plus a few Unix functions. To build
+the program, you need the GNU gcc compiler (version 3.2 or newer) and
+GNU make. Using other compilers or makes, or building on a non-Unix
+system, will probably require changes to the Makefile and the source.
+
+It has been tested on:
+
+* Debian GNU/Linux (i386) 3.1 with gcc 3.3.5
+* Digital Unix 5.1 (Alpha) with 3.3.2
+* Solaris 9 (UltraSPARC) with gcc 3.2
+
+To compile, run "make".
+
+The program is called "occ". By default, it reads a graph from
+standard input and writes it to standard output. The graph format is a
+simple text format, where each line describes one edge, given by its
+two endpoints separated by whitespace:
+
+v0 v1
+v1 v2
+v2 v0
+
+Vertex names can be any combination of letters, digits, and _. Note
+that this graph format cannot describe degree-0 vertices; however,
+they are irrelevant for Graph Bipartization anyway.
+
+The output is a minimum set of vertices to delete to make the graph
+bipartite. Example:
+
+# ./occ < data/afro-americans/10.graph
+38
+31
+28
+25
+1
+0
+
+By default, the program executes the unmodified Reed/Smith/Vetta
+algorithm (see Table 1, column "Reed"). Option -g enables the use of
+Gray codes (column "OCC-Gray"), and option -b uses the "OCC-Enum2Col"
+algorithm.
+
+With -s, one gets only a single line of output containing some
+statistics:
+
+   n      m    |C|    run time [s]    augmentations
+  102    307    11       0.78           671088
+
+
+
+The test data
+=============
+
+The directory "data" contains benchmark instances assembled by
+Sebastian Wernicke. They are based on data made available by the
+Whitehead Institute
+(http://www.broad.mit.edu/mpg/hapmap/hapstruc.html).
+
+See
+
+Sebastian Wernicke.
+On the algorithmic tractability of single nucleotide polymorphism
+(SNP) analysis and related problems.
+Diplomarbeit, Universität Tübingen, 2003.
+
+for details on the data and the file format.
+
+
+-- Falk Hueffner <hueffner at minet.uni-jena.de>, March 16 2005
